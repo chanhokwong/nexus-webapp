@@ -1,4 +1,5 @@
-import apiClient, { longTimeoutApiClient } from './axios';
+import { longTimeoutApiClient } from './axios';
+// import apiClient, { longTimeoutApiClient } from './axios';
 
 // --- [核心修正] 更新类型定义 ---
 // 我们不再需要 Node 和 Edge，只需要 Mermaid 响应类型
