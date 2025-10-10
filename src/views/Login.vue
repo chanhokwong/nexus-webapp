@@ -28,10 +28,10 @@
         </form>
 
         <!-- [核心] 自定义 Google 按钮 (图1样式) -->
-        <button class="btn btn-google" @click="triggerGoogleSignin" :disabled="!isGisLoaded">
-          <GoogleIcon v-if="!isGisLoaded" class="google-icon-svg spinner" />
+        <button class="btn btn-google" @click="triggerGoogleSignin" :disabled="!isGisReady">
+          <GoogleIcon v-if="!isGisReady" class="google-icon-svg spinner" />
           <GoogleIcon v-else class="google-icon-svg" />
-          <span>{{ isGisLoaded ? '使用 GOOGLE 帳戶登入' : '正在加載 Google 服務...' }}</span>
+          <span>{{ isGisReady ? '使用 GOOGLE 帳戶登入' : '正在加載 Google 服務...' }}</span>
         </button>
 
         <!-- 
@@ -64,7 +64,7 @@ const email = ref('');
 const password = ref('');
 
 // [核心] 1. 创建一个状态来追踪 Google 脚本是否加载完毕
-const isGisLoaded = ref(false);
+const isGisReady = ref(false);
 
 const GOOGLE_CLIENT_ID = '432133069805-jrp0cqu0ltphuinc3h1i6enrlqb3bd79.apps.googleusercontent.com';
 
@@ -89,7 +89,7 @@ window.handleGoogleCredentialResponse = async (response: any) => {
   }
 };
 
-// [核心] 2. Google 脚本加载完成后的回调
+// Google 脚本加载完成后的回调
 // @ts-ignore
 window.gisLoaded = () => {
   if (!window.google || !window.google.accounts) return;
@@ -100,58 +100,69 @@ window.gisLoaded = () => {
     ux_mode: 'popup',
   });
 
+  // [核心] 脚本加载后，只渲染一次按钮，并更新状态
   const hiddenButtonContainer = document.getElementById('google-signin-button-hidden');
   if (hiddenButtonContainer) {
     window.google.accounts.id.renderButton(
       hiddenButtonContainer,
       { theme: "outline", size: "large" } 
     );
-    // [关键] 渲染完成后，更新我们的状态
-    isGisLoaded.value = true; 
-    console.log("Google Sign-In button has been rendered.");
+    isGisReady.value = true; 
+    console.log("Initial Google Sign-In button has been rendered.");
   }
 };
 
-// [核心] 3. 新的、状态驱动的“代理点击”函数
+// [核心最终修正] 新的、绝对可靠的“代理点击”函数
 const triggerGoogleSignin = () => {
-  // 我们不再检查 DOM，而是直接检查我们的状态
-  if (!isGisLoaded.value) {
+  if (!isGisReady.value) {
     ElMessage.warning("Google 登錄服務仍在加載中，請稍候...");
     return;
   }
   
-  const googleBtnContainer = document.getElementById('google-signin-button-hidden');
-  const googleBtn = googleBtnContainer?.querySelector('[role="button"]') as HTMLElement | null;
+  const hiddenButtonContainer = document.getElementById('google-signin-button-hidden');
+  if (!hiddenButtonContainer) return;
+  
+  // 1. 尝试寻找现有的按钮
+  let googleBtn = hiddenButtonContainer.querySelector('[role="button"]') as HTMLElement | null;
 
+  // 2. 如果按钮不存在（说明被移除了）
+  if (!googleBtn) {
+    console.warn("Google button not found. Re-rendering...");
+    // 重新渲染一次
+    try {
+      window.google.accounts.id.renderButton(
+        hiddenButtonContainer,
+        { theme: "outline", size: "large" } 
+      );
+      // 再次寻找
+      googleBtn = hiddenButtonContainer.querySelector('[role="button"]') as HTMLElement | null;
+    } catch (error) {
+      console.error("Error re-rendering Google button:", error);
+      ElMessage.error("重新渲染 Google 按鈕時出錯，請刷新頁面。");
+      return;
+    }
+  }
+
+  // 3. 无论按钮是本来就在，还是刚刚重新渲染的，现在都应该存在了
   if (googleBtn) {
     googleBtn.click();
   } else {
-    // 这是一个后备错误，理论上不应该发生
-    ElMessage.error("無法找到 Google 登錄按鈕，請嘗試刷新頁面。");
+    // 这是一个极端的后备错误
+    ElMessage.error("無法找到或創建 Google 登錄按鈕，請嘗試刷新頁面。");
   }
 };
 
-// 3. 改造 onMounted 和新增 onUnmounted
 onMounted(() => {
-  // 检查 gisLoaded 是否已经被调用（应对某些缓存场景）
-  // 如果 window.google 已经存在，可能意味着脚本已加载，但我们的组件后挂载
-  // 此时需要手动调用一次
-  if (window.google && !document.getElementById('google-signin-button-hidden')?.hasChildNodes()) {
-     // @ts-ignore
-     window.gisLoaded();
+  // 可以保留一个备用检查，以防 gisLoaded 在组件挂载前就意外触发
+  if (window.google && !isGisReady.value) {
+    // @ts-ignore
+    window.gisLoaded();
   }
 });
 
 onUnmounted(() => {
-  // 在组件卸载时，清理掉全局函数，避免内存泄漏
-  // @ts-ignore
-  if (window.gisLoaded) {
-    // @ts-ignore
-    delete window.gisLoaded;
-  }
-  if (window.handleGoogleCredentialResponse) {
-    delete window.handleGoogleCredentialResponse;
-  }
+  if (window.gisLoaded) delete window.gisLoaded;
+  if (window.handleGoogleCredentialResponse) delete window.handleGoogleCredentialResponse;
 });
 
 // --- 登錄邏輯 ---
