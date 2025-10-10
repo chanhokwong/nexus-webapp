@@ -66,6 +66,7 @@ const GOOGLE_CLIENT_ID = '432133069805-jrp0cqu0ltphuinc3h1i6enrlqb3bd79.apps.goo
 
 // 1. 定义一个全局可访问的回调函数
 //    Google 的库会通过 window 对象来调用这个函数
+// @ts-ignore
 window.handleGoogleCredentialResponse = async (response: any) => {
   const loading = ElMessage({ message: '正在通过 Google 验证...', type: 'info', duration: 0 });
   try {
@@ -85,6 +86,7 @@ window.handleGoogleCredentialResponse = async (response: any) => {
 };
 
 // 2. [关键] 创建由 Google 脚本调用的初始化函数
+// @ts-ignore
 window.gisLoaded = () => {
   if (!window.google || !window.google.accounts) {
     console.error("gisLoaded was called, but window.google.accounts is not available.");
@@ -115,13 +117,16 @@ onMounted(() => {
   // 如果 window.google 已经存在，可能意味着脚本已加载，但我们的组件后挂载
   // 此时需要手动调用一次
   if (window.google && !document.getElementById('google-signin-button-hidden')?.hasChildNodes()) {
+     // @ts-ignore
      window.gisLoaded();
   }
 });
 
 onUnmounted(() => {
   // 在组件卸载时，清理掉全局函数，避免内存泄漏
+  // @ts-ignore
   if (window.gisLoaded) {
+    // @ts-ignore
     delete window.gisLoaded;
   }
   if (window.handleGoogleCredentialResponse) {
@@ -140,6 +145,7 @@ const triggerGoogleSignin = () => {
   } else {
     ElMessage.error("Google 登錄按鈕尚未初始化，請稍候...");
     if (window.google) {
+      // @ts-ignore
       window.gisLoaded();
     }
   }
