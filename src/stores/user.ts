@@ -9,7 +9,7 @@ export const useUserStore = defineStore('user', () => {
   // ref() 對應 state
   const token = ref<string | null>(localStorage.getItem('nexus-token'));
   const currentUser = ref<User | null>(null);
-  const status = ref<'idle' | 'loading' | 'error'>('idle');
+  const status = ref<'idle' | 'loading' | 'error' | 'init'>('init');
 
   // === GETTERS ===
   // computed() 對應 getters
@@ -40,17 +40,16 @@ export const useUserStore = defineStore('user', () => {
    * @param credentials - 登錄所需的用戶名和密碼
    */
   async function handleLogin(credentials: LoginPayload) {
+    status.value = 'loading';
     try {
-      status.value = 'loading';
       const response = await authApi.login(credentials);
       setToken(response.access_token);
       await fetchAndSetCurrentUser(); // 登錄成功後立即獲取用戶信息
       status.value = 'idle';
-      return Promise.resolve(response);
+      return Promise.resolve();
     } catch (error) {
       status.value = 'error';
-      // 登錄失敗，清空 token
-      setToken(null);
+      logout();
       console.error('Login failed:', error);
       return Promise.reject(error);
     }
@@ -84,15 +83,13 @@ export const useUserStore = defineStore('user', () => {
       return;
     }
     try {
-      status.value = 'loading';
       const user = await authApi.fetchCurrentUser();
       currentUser.value = user;
-      status.value = 'idle';
     } catch (error) {
       // 如果獲取用戶信息失敗 (例如 token 過期)，則視為登出
       console.error('Failed to fetch user info, logging out:', error);
       logout();
-      status.value = 'error';
+      throw error;
     }
   }
 
@@ -100,9 +97,23 @@ export const useUserStore = defineStore('user', () => {
    * 檢查用戶認證狀態 (在應用程序啟動時調用)
    */
   async function checkAuthStatus() {
-    // 如果本地有 token，就嘗試用它來獲取用戶信息
+    console.log("[Auth] Checking authentication status...");
+    // 检查本地存储中是否有 token
     if (token.value) {
-      await fetchAndSetCurrentUser();
+      try {
+        // 如果有 token，尝试用它来获取用户信息
+        status.value = 'loading';
+        await fetchAndSetCurrentUser();
+        status.value = 'idle';
+        console.log("[Auth] Status restored successfully.");
+      } catch (error) {
+        // 如果获取失败（token过期/无效），logout() 会被调用，状态会被清理
+        console.log("[Auth] Status check failed, user is logged out.");
+      }
+    } else {
+      // 如果没有 token，什么都不做，保持未登录状态
+      console.log("[Auth] No token found, user is not logged in.");
+      status.value = 'idle';
     }
   }
   
@@ -112,7 +123,6 @@ export const useUserStore = defineStore('user', () => {
   function logout() {
     setToken(null);
     currentUser.value = null;
-    status.value = 'idle';
     // 在組件中使用 router 實例進行跳轉，這裡只負責清理狀態
     // const router = useRouter(); // 不推薦在 store 中直接使用 router
     // router.push('/login');
