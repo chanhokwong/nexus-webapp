@@ -98,25 +98,29 @@ const router = createRouter({
   routes,
 });
 
-// 全局前置導航守衛
+// [核心最终修正] 添加详细的调试日志
 router.beforeEach((to, from, next) => {
-  // **關鍵：必須在守衛內部獲取 store 實例**
-  // 因為 Pinia 實例在 router 創建之後才被掛載到 app 上
+  console.log(`--- [Router Guard] Navigating ---`);
+  console.log(`From: ${from.path}`);
+  console.log(`To: ${to.path}`);
+
+  // 关键：在守卫内部获取 store 的最新状态
   const userStore = useUserStore();
   const isLoggedIn = userStore.isLoggedIn;
+  console.log(`isLoggedIn status: ${isLoggedIn}`);
+
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+  console.log(`Route requires auth: ${requiresAuth}`);
 
   if (requiresAuth && !isLoggedIn) {
-    // 如果目標路由需要認證，但用戶未登錄
-    // 則重定向到登錄頁
+    console.log("[Router Guard Decision]: Redirecting to /login (auth required but not logged in).");
     next({ name: 'Login' });
   } else if ((to.name === 'Login' || to.name === 'Register') && isLoggedIn) {
-    // 如果用戶已登錄，但試圖訪問登錄或註冊頁
-    // 則重定向到儀表盤
+    console.log("[Router Guard Decision]: Redirecting to /dashboard (already logged in).");
     next({ name: 'Dashboard' });
   } else {
-    // 其他情況，正常放行
-    next();
+    console.log("[Router Guard Decision]: Allowing navigation.");
+    next(); // 正常放行
   }
 });
 

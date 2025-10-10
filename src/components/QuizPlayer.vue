@@ -7,10 +7,10 @@
       <div class="question-counter">{{ $t('quizPlayer.quizNum') }} {{ currentQuestionIndex + 1 }} / {{ questions.length }}</div>
       
       <div class="question-content">
-        <p class="question-text">{{ currentQuestion.question }}</p>
+        <p class="question-text">{{ currentQuestion?.question }}</p>
         <div class="options-grid">
           <button
-            v-for="(option, index) in currentQuestion.options"
+            v-for="(option, index) in currentQuestion?.options"
             :key="index"
             class="option-btn"
             :class="getOptionClass(option)"
@@ -59,12 +59,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { ElMessage } from 'element-plus';
 import type { QuizResponse } from '../api/ai'; // 导入类型
 import { Check, Close } from '@element-plus/icons-vue';
 import { saveQuizResult, type SaveQuizPayload } from '../api/history';
 import { v4 as uuidv4 } from 'uuid';
-import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   quizData: QuizResponse;
@@ -78,9 +76,6 @@ const isFinished = ref(false);
 const quizSessionId = ref('');
 const saveStatus = ref<'idle' | 'saving' | 'success' | 'error'>('idle');
 
-const { t } = useI18n();
-
-const invalidGraphId = computed(() => t('graphReview.invalidGraphId'));
 
 onMounted(() => {
   quizSessionId.value = uuidv4();
@@ -89,6 +84,7 @@ onMounted(() => {
 const getIcon = (option: string) => {
   const selectedAnswer = userAnswers.value[currentQuestionIndex.value];
   if (!selectedAnswer) return null; // 未回答时不显示任何图标
+  if (!currentQuestion.value) return; // 或者 return '';
 
   const correctAnswer = currentQuestion.value.answer;
   if (option === correctAnswer) return Check; // 正确答案显示对勾
@@ -153,6 +149,7 @@ const handleSaveResult = async () => {
 const getOptionClass = (option: string) => {
   const selectedAnswer = userAnswers.value[currentQuestionIndex.value];
   if (!selectedAnswer) return '';
+  if (!currentQuestion.value) return; // 或者 return '';
   const correctAnswer = currentQuestion.value.answer;
   if (option === correctAnswer) return 'correct';
   if (option === selectedAnswer && option !== correctAnswer) return 'incorrect';

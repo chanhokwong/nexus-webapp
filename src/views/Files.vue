@@ -68,7 +68,7 @@
                       <el-icon><Download /></el-icon>
                     </button>
                   </a>
-                  <button :title="deleteText" class="action-btn" @click="handleDelete(file)"><el-icon><Delete /></el-icon></button>
+                  <button :title="deleteText" class="action-btn" @click.stop="handleDelete(file)"><el-icon><Delete /></el-icon></button>
                   <button :title="moreText" class="action-btn"><el-icon><MoreFilled /></el-icon></button>
                 </div>
               </td>
@@ -147,7 +147,7 @@
 import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { ElMessage, ElMessageBox, ElDialog, ElUpload, ElSelect, ElOption } from 'element-plus';
 import { Upload, Search, Document, Download, Delete, MoreFilled, UploadFilled, ArrowUp, ArrowDown } from '@element-plus/icons-vue';
-import { getAllUserDocuments, deleteDocument, uploadDocument, getDocumentContent, type DocumentInfo, type DocumentContent } from '../api/documents';
+import { getAllUserDocuments, deleteDocument, uploadDocument, type DocumentInfo } from '../api/documents';
 import { useI18n } from 'vue-i18n';
 
 // --- 語言 ---
@@ -184,7 +184,6 @@ const isUploadModalVisible = ref(false);
 // --- [核心] 预览相关状态 ---
 const isPreviewModalVisible = ref(false);
 const previewingFile = ref<DocumentInfo | null>(null);
-const previewContent = ref('');
 
 // --- 滚动相关状态 ---
 const scrollContainerRef = ref<HTMLElement | null>(null);

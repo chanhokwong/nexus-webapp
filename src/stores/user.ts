@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
 import * as authApi from '../api/auth'; // 導入我們封裝的所有 auth API 函數
 import type { LoginPayload, RegisterPayload, User } from '../types/api';
 

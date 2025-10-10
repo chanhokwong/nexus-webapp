@@ -77,12 +77,6 @@ const onRegisterSubmit = async () => {
   }
 };
 
-const handleGoogleLogin = () => {
-  ElMessage.info({
-    message: 'Google registration functionality is under development.',
-    customClass: 'nexus-message'
-  });
-};
 </script>
 
 <style scoped>

@@ -73,7 +73,7 @@ interface QuizAttempt {
 }
 
 interface QuizResultDetail { 
-  session_id: number;
+  session_id: number | string; 
   workspace_name: string; 
   score: number;
   total_questions: number;
@@ -87,23 +87,27 @@ const isLoading = ref(true);
 
 onMounted(async () => {
   const sessionId = route.params.id as string;
-  if (!sessionId) {
+  if (!sessionId || sessionId === 'undefined') {
     ElMessage.error(invalidQuizId.value);
     isLoading.value = false;
     return;
   }
 
   try {
-    // 我们的 Axios 拦截器会直接返回 data，所以 responseData 的类型就是 QuizResultDetail
-    // 后端返回的是一个对象，而不是数组
+    isLoading.value = true;
+    
+     // 1. [关键] 我们期望得到的是一个对象，所以泛型是 QuizResultDetail
     const responseData = await apiClient.get<QuizResultDetail>(`/quiz-history/${sessionId}`);
     
-    // [关键] 直接将返回的数据赋值给 quizResult
-    if (responseData && responseData.session_id) {
-      quizResult.value = responseData;
+    // 2. [关键] 检查返回的是否是一个有效的对象
+    // @ts-ignore
+    if (responseData && responseData.session_id !== undefined) {
+      // 3. 直接将这个对象赋值
+      // @ts-ignore
+      quizResult.value = responseData; 
     } else {
-      // 如果后端返回了 200 OK，但 data 是空的或无效的
-      throw new Error("API returned invalid data format.");
+      // 如果后端返回了 200 OK，但 data 是空数组或不是数组
+      throw new Error("API returned invalid data format: expected a non-empty array.");
     }
 
   } catch (error: any) {

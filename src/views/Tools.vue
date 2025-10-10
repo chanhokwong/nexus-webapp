@@ -39,7 +39,6 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 // 导入所有需要的图标
 import { Reading, AlarmClock, MagicStick, DocumentCopy } from '@element-plus/icons-vue';
@@ -83,7 +82,6 @@ interface Tool {
   action: () => void; // 每个工具都有一个点击后执行的动作
 }
 
-const router = useRouter();
 
 // 定义分类
 const categories = ref([

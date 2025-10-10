@@ -255,12 +255,6 @@ const handleDeleteAccount = () => {
 
 <style scoped>
 /* --- [核心] 将您提供的所有 CSS 样式复制到这里 --- */
-#account-panel { 
-
-}
-#preferences-panel { 
-
-}
 .settings-page-container { 
   height: 100%; 
 }

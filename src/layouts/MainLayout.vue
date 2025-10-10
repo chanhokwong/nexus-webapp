@@ -57,11 +57,9 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/user';
 import UserAvatar from '../components/UserAvatar.vue';
-import { House, Files, Collection, Clock, Suitcase, Setting, DArrowLeft, SwitchButton } from '@element-plus/icons-vue';
-import { useI18n } from 'vue-i18n';
+import { House, Files, Collection, Clock, Suitcase, Setting, DArrowLeft } from '@element-plus/icons-vue';
 import { useLocaleStore } from '../stores/locale';
 
-const { t } = useI18n();
 const isSidebarCollapsed = ref(false);
 const router = useRouter();
 const userStore = useUserStore();

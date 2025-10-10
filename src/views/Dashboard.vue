@@ -71,7 +71,7 @@
 // [核心] 导入新的图标
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { Files, Collection, TakeawayBox, Suitcase, Reading } from '@element-plus/icons-vue';
+import { Files, Collection, TakeawayBox, Suitcase } from '@element-plus/icons-vue';
 // 导入新的 API 函数和类型
 import { getWorkspaces, type Workspace } from '../api/workspaces';
 import { useI18n } from 'vue-i18n';

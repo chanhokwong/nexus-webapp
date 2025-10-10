@@ -20,9 +20,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import VueMermaidString from 'vue-mermaid-string';
-import { ElMessage } from 'element-plus';
 
-const props = defineProps<{ graphString: string }>();
+defineProps<{ graphString: string }>();
 
 const containerRef = ref<HTMLElement | null>(null);
 const pan = ref({ x: 0, y: 0 });
@@ -65,7 +64,7 @@ const handleWheel = (event: WheelEvent) => {
   zoom.value = Math.max(0.1, Math.min(5, newZoom));
 };
 
-const handleError = (error: any) => { /* ... */ };
+const handleError = (_error: any) => { /* ... */ };
 
 // [核心最终修正] 优化的 centerView 方法
 const centerView = () => {

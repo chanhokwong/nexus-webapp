@@ -198,9 +198,7 @@ const viewHistoryDetail = (event: HistoryEvent) => {
     padding-left: 20px;
     flex-shrink: 0;
 }
-.filter-bar { 
 
-}
 .search-wrapper, .search-wrapper svg, .filter-input, .filter-select { 
     background-color: var(--panel-bg); 
     border: 1px solid var(--border-color);

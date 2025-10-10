@@ -4,5 +4,4 @@ declare module '*.vue' {
   export default component
 }
 
-declare module 'vue-particles';
 declare module 'vue-mermaid-string';

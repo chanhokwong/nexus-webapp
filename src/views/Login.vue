@@ -48,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/user';
 import { ElMessage } from 'element-plus';
@@ -75,6 +75,7 @@ window.handleGoogleCredentialResponse = async (response: any) => {
     
     loading.close();
     ElMessage.success('Google 登錄成功！');
+    await nextTick();
     router.push('/dashboard');
   } catch (error) {
     loading.close();
@@ -127,21 +128,32 @@ const triggerGoogleSignin = () => {
 // --- 登錄邏輯 ---
 const onLoginSubmit = async () => {
   if (!email.value || !password.value) {
-    ElMessage.warning({
-      message: 'ACCESS KEY and SEQUENCE cannot be empty.',
-      customClass: 'nexus-message' // 可選：自定義消息樣式
-    });
+    ElMessage.warning('請填寫電子郵箱和密碼');
     return;
   }
+  
+  const loading = ElMessage({ message: '正在登入...', type: 'info', duration: 0 });
+  
   try {
+    // 调用 store 中的 handleLogin action
     await userStore.handleLogin({ email: email.value, password: password.value });
-    // 登錄成功不需要提示，直接跳轉
+    
+    loading.close();
+    ElMessage.success('登錄成功！');
+    
+    // 2. [关键] 等待下一个 DOM 更新周期/响应式更新周期
+    await nextTick();
+    
+    // 此时，Pinia store 的 isLoggedIn 已经更新为 true
+    console.log("After nextTick, isLoggedIn is:", userStore.isLoggedIn); // 应该会打印 true
+    
+    // 3. 执行跳转
     router.push('/dashboard'); 
-  } catch (error) {
-    ElMessage.error({
-      message: 'AUTHENTICATION FAILED. CHECK CREDENTIALS.',
-      customClass: 'nexus-message'
-    });
+    
+  } catch (error: any) {
+    loading.close();
+    const errorMessage = error.response?.data?.detail || '登錄失敗，請檢查您的憑證';
+    ElMessage.error(errorMessage);
   }
 };
 </script>

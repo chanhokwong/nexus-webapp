@@ -235,7 +235,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 // [核心] 导入 ElDialog 和新的图标
 import { ElDialog, ElMessage, ElMessageBox } from 'element-plus';
@@ -243,10 +243,10 @@ import { Plus, Close, Select, CircleCheck, Loading, FullScreen, UploadFilled, Up
 
 // [核心] 导入新的 API 函数
 import { getWorkspaceById, addDocumentsToWorkspace, removeDocumentFromWorkspace, type Workspace } from '../api/workspaces';
-import { getAllUserDocuments, getDocumentContent, uploadDocument, type DocumentInfo } from '../api/documents';
+import { getAllUserDocuments, uploadDocument, type DocumentInfo } from '../api/documents';
 
 // [核心] 导入所有 AI 相关的 API 函数
-import { generateKnowledgeGraph, generateNotes, generateQuiz, type NotesResponse, type QuizResponse, type KnowledgeGraphMermaidResponse } from '../api/ai';
+import { generateKnowledgeGraph, generateNotes, generateQuiz, type QuizResponse, type KnowledgeGraphMermaidResponse } from '../api/ai';
 
 // [核心] 导入新的 API 函数和类型
 import { saveKnowledgeGraph, type SaveGraphPayload } from '../api/history';

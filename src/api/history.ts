@@ -1,4 +1,5 @@
 import apiClient from './axios';
+import { rawApiClient } from './axios'; // [核心] 导入 rawApiClient
 
 // --- 类型定义 ---
 // 定义一个统一的历史事件类型
@@ -12,7 +13,7 @@ export interface HistoryEvent {
 
 // 假设的后端返回类型
 interface QuizHistorySession { 
-  id: string; 
+  session_id: string; 
   workspace_name: string; 
   created_at: string; 
 }
@@ -74,74 +75,77 @@ export interface SaveQuizPayload {
  * [聚合] 获取并合并所有类型的历史记录
  */
 export const getAllHistory = async (): Promise<HistoryEvent[]> => {
-  console.log("--- [DEBUG] Starting to fetch all history ---");
-
-  const results = await Promise.allSettled([
-    apiClient.get<QuizHistorySession[]>('/quiz-history/sessions'),
-    apiClient.get<ChatHistorySession[]>('/chat-history/sessions'),
-    apiClient.get<GraphHistoryItem[]>('/knowledge-graphs/'),
-    apiClient.get<NoteHistoryItem[]>('/notes/'),
-  ]);
-
   const allEvents: HistoryEvent[] = [];
 
-  // 1. 处理测验历史
-  if (results[0].status === 'fulfilled') {
-    // [核心修正] 直接在 value (即数据数组) 上调用 .map()
-    const quizzes: HistoryEvent[] = results[0].value.map(s => ({
-      type: 'quiz', id: s.session_id, title: '完成一次測驗',
-      context: `源自工作台: ${s.workspace_name}`, timestamp: s.created_at
-    }));
-    allEvents.push(...quizzes);
-    console.log(`[DEBUG] Fetched ${quizzes.length} quiz histories.`);
-  } else {
-    console.error("Failed to fetch quiz history:", results[0].reason);
+  const [quizResult, chatResult, graphResult, noteResult] = await Promise.allSettled([
+    rawApiClient.get<QuizHistorySession[]>('/quiz-history/sessions'), // << 确保这一行没有被删除或注释
+    rawApiClient.get<ChatHistorySession[]>('/chat-history/sessions'),
+    rawApiClient.get<GraphHistoryItem[]>('/knowledge-graphs/'),
+    rawApiClient.get<NoteHistoryItem[]>('/notes/'),
+  ]);
+
+  // [核心最终修正] 在 .map() 之前添加 .filter() 来剔除所有无效数据
+
+  if (quizResult.status === 'fulfilled') {
+    const data = quizResult.value.data;
+    if (Array.isArray(data)) {
+      const quizzes: HistoryEvent[] = data
+        .filter(s => s && s.session_id) // 过滤掉没有 session_id 的记录
+        .map(s => ({
+          type: 'quiz', 
+          id: s.session_id!, // [核心] 使用正确的字段名 session_id
+          title: '完成一次測驗',
+          context: `源自工作台: ${s.workspace_name || '未知'}`, 
+          timestamp: s.created_at || new Date().toISOString()
+        }));
+      allEvents.push(...quizzes);
+    }
   }
 
-  // 2. 处理聊天历史
-  if (results[1].status === 'fulfilled') {
-    // [核心修正] 移除 .data
-    const chats: HistoryEvent[] = results[1].value.map(s => ({
-      type: 'chat', id: s.id, title: '與 AI 導師聊天',
-      context: `主題: ${s.first_message.substring(0, 50)}...`,
-      timestamp: s.created_at
-    }));
+  if (chatResult.status === 'fulfilled' && Array.isArray(chatResult.value.data)) {
+    const data = chatResult.value.data;
+    const chats: HistoryEvent[] = data
+      .filter(s => s && s.session_id) // << 过滤
+      .map(s => ({
+        type: 'chat', 
+        id: s.session_id!,
+        title: '與 AI 導師聊天',
+        context: `主題: ${(s.first_message || '無主題').substring(0, 50)}...`, 
+        timestamp: s.created_at || new Date().toISOString()
+      }));
     allEvents.push(...chats);
-    console.log(`[DEBUG] Fetched ${chats.length} chat histories.`);
-  } else {
-    console.error("Failed to fetch chat history:", results[1].reason);
-  }
-
-  // 3. 处理知识图谱历史
-  if (results[2].status === 'fulfilled') {
-    // [核心修正] 移除 .data
-    const graphs: HistoryEvent[] = results[2].value.map(g => ({
-      type: 'graph', id: g.id.toString(), title: '生成知識圖譜',
-      context: `標題: ${g.title}`, timestamp: g.created_at
-    }));
-    allEvents.push(...graphs);
-    console.log(`[DEBUG] Fetched ${graphs.length} graph histories.`);
-  } else {
-    console.error("Failed to fetch graph history:", results[2].reason);
-  }
-
-  // 4. 处理笔记历史
-  if (results[3].status === 'fulfilled') {
-    // [核心修正] 移除 .data
-    const notes: HistoryEvent[] = results[3].value.map(n => ({
-      type: 'notes', id: n.id.toString(), title: '生成學習筆記',
-      context: `標題: ${n.title}`, timestamp: n.created_at
-    }));
-    allEvents.push(...notes);
-    console.log(`[DEBUG] Fetched ${notes.length} note histories.`);
-  } else {
-    console.error("Failed to fetch note history:", results[3].reason);
   }
   
-  // 合并后按时间倒序排序
+  if (graphResult.status === 'fulfilled' && Array.isArray(graphResult.value.data)) {
+    const data = graphResult.value.data;
+    const graphs: HistoryEvent[] = data
+      .filter(g => g && g.id !== null && g.id !== undefined) // << 更严格的过滤
+      .map(g => ({
+        type: 'graph', 
+        id: g.id!.toString(),
+        title: '生成知識圖譜',
+        context: `標題: ${g.title || '無標題'}`, 
+        timestamp: g.created_at || new Date().toISOString()
+      }));
+    allEvents.push(...graphs);
+  }
+
+  if (noteResult.status === 'fulfilled' && Array.isArray(noteResult.value.data)) {
+    const data = noteResult.value.data;
+    const notes: HistoryEvent[] = data
+      .filter(n => n && n.id !== null && n.id !== undefined) // << 更严格的过滤
+      .map(n => ({
+        type: 'notes', 
+        id: n.id!.toString(),
+        title: '生成學習筆記',
+        context: `標題: ${n.title || '無標題'}`, 
+        timestamp: n.created_at || new Date().toISOString()
+      }));
+    allEvents.push(...notes);
+  }
+  
   allEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   
-  console.log(`[DEBUG] Total formatted history events: ${allEvents.length}`);
   return allEvents;
 };
 

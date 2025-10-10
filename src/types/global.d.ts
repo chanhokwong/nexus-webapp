@@ -7,6 +7,7 @@ declare global {
     handleGoogleCredentialResponse?: (response: any) => void;
   }
 }
+declare module 'vue-mermaid-string';
 
 // 导出空对象以确保这是一个模块文件
 export {};
