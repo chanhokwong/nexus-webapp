@@ -161,6 +161,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  // @ts-ignore
   if (window.gisLoaded) delete window.gisLoaded;
   if (window.handleGoogleCredentialResponse) delete window.handleGoogleCredentialResponse;
 });
