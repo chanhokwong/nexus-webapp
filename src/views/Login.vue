@@ -48,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted, nextTick, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/user';
 import { ElMessage } from 'element-plus';
@@ -84,32 +84,49 @@ window.handleGoogleCredentialResponse = async (response: any) => {
   }
 };
 
+// 2. [关键] 创建由 Google 脚本调用的初始化函数
+window.gisLoaded = () => {
+  if (!window.google || !window.google.accounts) {
+    console.error("gisLoaded was called, but window.google.accounts is not available.");
+    return;
+  }
+  
+  console.log("Google Identity Services script has loaded. Initializing...");
+  
+  window.google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: window.handleGoogleCredentialResponse,
+    ux_mode: 'popup',
+  });
 
-// 4. 在组件挂载后，初始化 Google 登录按钮
+  // 将官方按钮渲染到隐藏的 div 中
+  const hiddenButtonContainer = document.getElementById('google-signin-button-hidden');
+  if (hiddenButtonContainer) {
+    window.google.accounts.id.renderButton(
+      hiddenButtonContainer,
+      { theme: "outline", size: "large" } 
+    );
+  }
+};
+
+// 3. 改造 onMounted 和新增 onUnmounted
 onMounted(() => {
-  // 增加延时和重试，以应对 Google 脚本加载慢的情况
-  let attempts = 0;
-  const interval = setInterval(() => {
-    if (typeof window.google !== 'undefined' && window.google.accounts) {
-      clearInterval(interval);
-      console.log("Google Identity Services loaded. Initializing...");
-      
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: window.handleGoogleCredentialResponse,
-        ux_mode: 'popup',
-      });
+  // 检查 gisLoaded 是否已经被调用（应对某些缓存场景）
+  // 如果 window.google 已经存在，可能意味着脚本已加载，但我们的组件后挂载
+  // 此时需要手动调用一次
+  if (window.google && !document.getElementById('google-signin-button-hidden')?.hasChildNodes()) {
+     window.gisLoaded();
+  }
+});
 
-      window.google.accounts.id.renderButton(
-        document.getElementById('google-signin-button-hidden'),
-        { theme: "outline", size: "large" }
-      );
-    } else if (attempts > 10) { // 超过5秒则放弃
-      clearInterval(interval);
-      console.error("Google Identity Services script failed to load after 5 seconds.");
-    }
-    attempts++;
-  }, 500); // 每半秒检查一次
+onUnmounted(() => {
+  // 在组件卸载时，清理掉全局函数，避免内存泄漏
+  if (window.gisLoaded) {
+    delete window.gisLoaded;
+  }
+  if (window.handleGoogleCredentialResponse) {
+    delete window.handleGoogleCredentialResponse;
+  }
 });
 
 // [核心] "代理点击" 函数
@@ -122,6 +139,9 @@ const triggerGoogleSignin = () => {
     googleBtn.click(); // 模拟点击
   } else {
     ElMessage.error("Google 登錄按鈕尚未初始化，請稍候...");
+    if (window.google) {
+      window.gisLoaded();
+    }
   }
 };
 
