@@ -28,9 +28,10 @@
         </form>
 
         <!-- [核心] 自定义 Google 按钮 (图1样式) -->
-        <button class="btn btn-google" @click="triggerGoogleSignin">
-          <GoogleIcon class="google-icon-svg" />
-          <span>使用 GOOGLE 帳戶登入</span>
+        <button class="btn btn-google" @click="triggerGoogleSignin" :disabled="!isGisLoaded">
+          <GoogleIcon v-if="!isGisLoaded" class="google-icon-svg spinner" />
+          <GoogleIcon v-else class="google-icon-svg" />
+          <span>{{ isGisLoaded ? '使用 GOOGLE 帳戶登入' : '正在加載 Google 服務...' }}</span>
         </button>
 
         <!-- 
@@ -62,6 +63,9 @@ const userStore = useUserStore();
 const email = ref('');
 const password = ref('');
 
+// [核心] 1. 创建一个状态来追踪 Google 脚本是否加载完毕
+const isGisLoaded = ref(false);
+
 const GOOGLE_CLIENT_ID = '432133069805-jrp0cqu0ltphuinc3h1i6enrlqb3bd79.apps.googleusercontent.com';
 
 // 1. 定义一个全局可访问的回调函数
@@ -85,15 +89,10 @@ window.handleGoogleCredentialResponse = async (response: any) => {
   }
 };
 
-// 2. [关键] 创建由 Google 脚本调用的初始化函数
+// [核心] 2. Google 脚本加载完成后的回调
 // @ts-ignore
 window.gisLoaded = () => {
-  if (!window.google || !window.google.accounts) {
-    console.error("gisLoaded was called, but window.google.accounts is not available.");
-    return;
-  }
-  
-  console.log("Google Identity Services script has loaded. Initializing...");
+  if (!window.google || !window.google.accounts) return;
   
   window.google.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID,
@@ -101,13 +100,34 @@ window.gisLoaded = () => {
     ux_mode: 'popup',
   });
 
-  // 将官方按钮渲染到隐藏的 div 中
   const hiddenButtonContainer = document.getElementById('google-signin-button-hidden');
   if (hiddenButtonContainer) {
     window.google.accounts.id.renderButton(
       hiddenButtonContainer,
       { theme: "outline", size: "large" } 
     );
+    // [关键] 渲染完成后，更新我们的状态
+    isGisLoaded.value = true; 
+    console.log("Google Sign-In button has been rendered.");
+  }
+};
+
+// [核心] 3. 新的、状态驱动的“代理点击”函数
+const triggerGoogleSignin = () => {
+  // 我们不再检查 DOM，而是直接检查我们的状态
+  if (!isGisLoaded.value) {
+    ElMessage.warning("Google 登錄服務仍在加載中，請稍候...");
+    return;
+  }
+  
+  const googleBtnContainer = document.getElementById('google-signin-button-hidden');
+  const googleBtn = googleBtnContainer?.querySelector('[role="button"]') as HTMLElement | null;
+
+  if (googleBtn) {
+    googleBtn.click();
+  } else {
+    // 这是一个后备错误，理论上不应该发生
+    ElMessage.error("無法找到 Google 登錄按鈕，請嘗試刷新頁面。");
   }
 };
 
@@ -133,23 +153,6 @@ onUnmounted(() => {
     delete window.handleGoogleCredentialResponse;
   }
 });
-
-// [核心] "代理点击" 函数
-const triggerGoogleSignin = () => {
-  // 找到隐藏的官方按钮内部真正的 <iframe> 或 <button>
-  const googleBtnContainer = document.getElementById('google-signin-button-hidden');
-  const googleBtn = googleBtnContainer?.querySelector('[role="button"]') as HTMLElement | null;
-
-  if (googleBtn) {
-    googleBtn.click(); // 模拟点击
-  } else {
-    ElMessage.error("Google 登錄按鈕尚未初始化，請稍候...");
-    if (window.google) {
-      // @ts-ignore
-      window.gisLoaded();
-    }
-  }
-};
 
 // --- 登錄邏輯 ---
 const onLoginSubmit = async () => {
@@ -344,6 +347,10 @@ const onLoginSubmit = async () => {
     color: #fff;
     background-color: rgba(255, 255, 255, 0.05);
 }
+.btn-google:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
 .google-icon {
     width: 20px;
     height: 20px;
@@ -353,6 +360,15 @@ const onLoginSubmit = async () => {
   width: 20px;
   height: 20px;
 }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
 /* [核心] 隐藏官方按钮的样式 */
 .hidden-google-btn {
   /* 
