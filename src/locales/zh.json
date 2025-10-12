@@ -76,7 +76,8 @@
     "data_upload_load": "文件上傳中，請稍候...",
     "upload_success_msg": "上傳成功！",
     "upload_fail_msg": "上傳失敗。",
-    "no_avaiable_preview_msg": "該文件沒有可用的預覽鏈接。 "
+    "no_avaiable_preview_msg": "該文件沒有可用的預覽鏈接。 ",
+    "no_any_files": "目前列表中沒有任何文件"
   },
   "graphReview":{
     "loadKnowledghGraphMsg": "正在加載知識圖譜...",

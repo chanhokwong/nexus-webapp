@@ -4,7 +4,7 @@
     <header class="mobile-header">
       <div class="brand">
         <img src="../assets/nexus-logo.png" alt="Nexus Logo" class="sidebar-logo">
-        <span>NEXUS</span>
+        <span class="brand">NEXUS</span>
       </div>
       <button class="hamburger-btn" @click="isDrawerOpen = true">
         <el-icon><Menu /></el-icon>
@@ -18,6 +18,7 @@
       :with-header="false"
       size="260px"
       custom-class="mobile-drawer"
+      style="background-color: var(--sidebar-bg);"
     >
       <!-- 我们在这里“复用”了桌面端侧边栏的几乎所有内部结构 -->
       <aside class="sidebar mobile-sidebar-content">
@@ -102,7 +103,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/user';
 import UserAvatar from '../components/UserAvatar.vue';
-import { House, Files, Collection, Setting, DArrowLeft } from '@element-plus/icons-vue';
+import { House, Files, Collection, Setting, DArrowLeft, Menu } from '@element-plus/icons-vue';
 import { useLocaleStore } from '../stores/locale';
 import { ElDrawer } from 'element-plus';
 import NavigationList from '../components/NavigationList.vue';
@@ -272,6 +273,11 @@ const localeStore = useLocaleStore();
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border-color);
   }
+  .mobile-header span {
+    position: fixed;
+    top: 20px;
+    left: 58px;
+  }
   .hamburger-btn { background: none; border: none; color: var(--text-primary); font-size: 24px; cursor: pointer; }
 
   /* 5. 移动端底部标签栏样式 */
@@ -294,6 +300,9 @@ const localeStore = useLocaleStore();
   }
   .footer-item.router-link-exact-active {
     color: var(--text-primary);
+  }
+  .user-profile {
+    padding-bottom: 25px;
   }
 }
 </style>

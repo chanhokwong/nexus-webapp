@@ -76,7 +76,8 @@
     "data_upload_load": "File uploading, please wait...",
     "upload_success_msg": "Upload successful!",
     "upload_fail_msg": "Upload failed.",
-    "no_avaiable_preview_msg": "There is no available preview link for this file."
+    "no_avaiable_preview_msg": "There is no available preview link for this file.",
+    "no_any_files": "There are currently no files in the list"
   },
   "graphReview":{
     "loadKnowledghGraphMsg": "Loading the knowledge graph...",

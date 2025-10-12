@@ -6,6 +6,7 @@
     center
     :modal-class="'nexus-dialog-modal'"
     class="nexus-dialog"
+    id="nexus-dialog"
   >
     <!-- [核心] 添加名稱和描述輸入框 -->
     <div class="form-content">
@@ -158,5 +159,10 @@ defineExpose({ openDialog });
 .btn-confirm:hover {
   filter: brightness(1.2);
   box-shadow: 0 0 10px var(--active-glow);
+}
+@media (max-width: 768px) {
+  #nexus-dialog {
+    width: 400px;
+  }
 }
 </style>

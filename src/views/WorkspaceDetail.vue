@@ -149,6 +149,7 @@
     center
     :modal-class="'nexus-dialog-modal'"
     class="nexus-dialog"
+    id="nexus-dialog-add"
   >
     <div class="doc-selection-list">
       <div 
@@ -187,6 +188,7 @@
     center
     :modal-class="'nexus-dialog-modal'"
     class="nexus-dialog"
+    id="nexus-dialog"
   >
     <el-upload
       class="upload-dragger"
@@ -216,7 +218,7 @@
     top="5vh"
     destroy-on-close
     :modal-class="'nexus-dialog-modal'" 
-    class="nexus-dialog preview-dialog"
+    class="nexus-dialog-up preview-dialog"
   >
     <!-- 
       只有在 previewingFile 和 url 都存在时才渲染 iframe，
@@ -941,6 +943,9 @@ const handleRemoveDocument = (doc: DocumentInfo) => {
     /* 在手機上，讓這兩個列表能完整顯示內容，而不是內部滾動 */
     overflow-y: visible;
     flex-grow: 0;
+  }
+  #nexus-dialog-up {
+    width: 300px;
   }
 }
 

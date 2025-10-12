@@ -80,7 +80,7 @@
 
       <!-- 2. 移动端：显示卡片列表 (默认隐藏) -->
       <div class="card-list-wrapper mobile-view">
-        <div v-if="isLoading" class="loading-state">...</div>
+        <div v-if="isLoading" class="loading-state">{{ $t('files.no_any_files') }}</div>
         <div v-else-if="filteredAndSortedFiles.length === 0" class="empty-state">...</div>
         <div 
           v-for="file in filteredAndSortedFiles" 

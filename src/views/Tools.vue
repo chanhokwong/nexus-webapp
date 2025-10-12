@@ -14,31 +14,47 @@
       </button>
     </nav>
 
-    <div class="tool-grid">
+    <div class="tool-grid-wrapper">
       <div 
-        v-for="tool in filteredTools" 
-        :key="tool.id" 
-        class="tool-card"
-        :class="{ disabled: tool.disabled }"
-        @click="handleToolClick(tool)"
+        class="tool-grid" 
+        ref="scrollContainerRef" 
+        @scroll="updateScrollButtons"
       >
-        <div class="card-icon-wrapper" :style="{ color: tool.color, backgroundColor: tool.bgColor }">
-          <el-icon><component :is="tool.icon" /></el-icon>
+        <div 
+          v-for="tool in filteredTools" 
+          :key="tool.id" 
+          class="tool-card"
+          :class="{ disabled: tool.disabled }"
+          @click="handleToolClick(tool)"
+        >
+          <div class="card-icon-wrapper" :style="{ color: tool.color, backgroundColor: tool.bgColor }">
+            <el-icon><component :is="tool.icon" /></el-icon>
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">{{ tool.title }}</h3>
+            <p class="card-description">{{ tool.description }}</p>
+          </div>
+          <span v-if="tool.badge" class="card-badge" :style="{ backgroundColor: tool.badgeColor || '#e53935' }">
+            {{ tool.badge }}
+          </span>
         </div>
-        <div class="card-content">
-          <h3 class="card-title">{{ tool.title }}</h3>
-          <p class="card-description">{{ tool.description }}</p>
-        </div>
-        <span v-if="tool.badge" class="card-badge" :style="{ backgroundColor: tool.badgeColor || '#e53935' }">
-          {{ tool.badge }}
-        </span>
+      </div>
+
+      <!-- [新增] 上下滑动按钮 -->
+      <div class="scroll-controls" v-show="canScroll">
+        <button class="scroll-btn" @click="scrollUp" :disabled="!canScrollUp" :title="$t('common.scroll_up')">
+          <el-icon><ArrowUp /></el-icon>
+        </button>
+        <button class="scroll-btn" @click="scrollDown" :disabled="!canScrollDown" :title="$t('common.scroll_down')">
+          <el-icon><ArrowDown /></el-icon>
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted, onUpdated } from 'vue';
 import { ElMessage } from 'element-plus';
 // 导入所有需要的图标
 import { Reading, AlarmClock, MagicStick, DocumentCopy } from '@element-plus/icons-vue';
@@ -128,6 +144,13 @@ const allTools = ref<Tool[]>([
   },
 ]);
 
+// --- [新增] 滾動相關狀態 ---
+const scrollContainerRef = ref<HTMLElement | null>(null);
+const canScroll = ref(false);
+const canScrollUp = ref(false);
+const canScrollDown = ref(false);
+let resizeObserver: ResizeObserver | null = null;
+
 // --- 2. 交互逻辑 ---
 const filteredTools = computed(() => {
   if (activeCategory.value === 'all') {
@@ -143,17 +166,68 @@ const handleToolClick = (tool: Tool) => {
   }
   tool.action(); // 执行工具定义好的动作
 };
+
+// --- [新增] 滾動邏輯 ---
+function updateScrollButtons() {
+  const el = scrollContainerRef.value;
+  if (!el) return;
+
+  const hasScrollbar = el.scrollHeight > el.clientHeight;
+  canScroll.value = hasScrollbar;
+
+  if (hasScrollbar) {
+    canScrollUp.value = el.scrollTop > 5; // 給一點緩衝區
+    canScrollDown.value = el.scrollTop + el.clientHeight < el.scrollHeight - 5;
+  } else {
+    canScrollUp.value = false;
+    canScrollDown.value = false;
+  }
+}
+
+function scrollUp() {
+  scrollContainerRef.value?.scrollBy({ top: -300, behavior: 'smooth' });
+}
+
+function scrollDown() {
+  scrollContainerRef.value?.scrollBy({ top: 300, behavior: 'smooth' });
+}
+
+// --- [新增] 生命周期鉤子 ---
+onMounted(() => {
+  const el = scrollContainerRef.value;
+  if (el) {
+    // 監聽尺寸變化
+    resizeObserver = new ResizeObserver(updateScrollButtons);
+    resizeObserver.observe(el);
+    // 初次檢查
+    updateScrollButtons();
+  }
+});
+
+onUnmounted(() => {
+  if (resizeObserver && scrollContainerRef.value) {
+    resizeObserver.unobserve(scrollContainerRef.value);
+  }
+});
+
+// 當篩選列表更新後，DOM 需要時間渲染，然後我們再檢查滾動狀態
+onUpdated(() => {
+  updateScrollButtons();
+});
 </script>
 
 <style scoped>
 /* --- 2. 主內容區 --- */
 .tools-container {
   height: 100%;
+  display: flex; /* 使用 Flexbox 進行佈局 */
+  flex-direction: column;
 }
 .page-header {
     margin-bottom: 20px;
     font-size: 32px;
     font-weight: 700;
+    flex-shrink: 0; /* 防止頭部被壓縮 */
 }
 
 /* --- 3. 標籤導航 (Tabs) --- */
@@ -162,6 +236,7 @@ const handleToolClick = (tool: Tool) => {
     gap: 16px;
     margin-bottom: 30px;
     border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0; /* 防止標籤導航被壓縮 */
 }
 .tab-item {
     padding: 12px 4px;
@@ -185,10 +260,18 @@ const handleToolClick = (tool: Tool) => {
 }
 
 /* --- 4. 工具網格 (Grid) --- */
+.tool-grid-wrapper {
+  position: relative; /* 為滾動按鈕提供定位上下文 */
+  flex-grow: 1; /* 佔滿剩餘的所有垂直空間 */
+  min-height: 0; /* Flexbox 滾動佈局的關鍵 hack */
+}
 .tool-grid {
+    height: 100%; /* 佔滿 wrapper 的高度 */
+    overflow-y: auto; /* [核心] 讓網格本身滾動 */
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 24px;
+    padding-right: 10px; /* 為滾動條留出空間，防止內容遮擋 */
 }
 .tool-card {
     display: flex;
@@ -203,6 +286,9 @@ const handleToolClick = (tool: Tool) => {
     transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
     position: relative;
     overflow: hidden; /* 確保 badge 不會溢出圓角 */
+}
+.tool-card {
+  height: 96px; 
 }
 .tool-card:hover {
     transform: translateY(-5px);
@@ -242,6 +328,37 @@ const handleToolClick = (tool: Tool) => {
   transform: none;
   border-color: var(--border-color);
   box-shadow: none;
+}
+
+/* --- [新增] 滾動按鈕樣式 --- */
+.scroll-controls {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 10;
+}
+.scroll-btn {
+    width: 36px; height: 36px;
+    background-color: var(--panel-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex; justify-content: center; align-items: center;
+    transition: all 0.3s;
+}
+.scroll-btn:hover:not(:disabled) {
+    border-color: var(--active-glow);
+    color: var(--text-primary);
+    transform: scale(1.1);
+}
+.scroll-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 /* --- [新增] 響應式樣式 --- */

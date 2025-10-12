@@ -166,23 +166,26 @@ const viewHistoryDetail = (event: HistoryEvent) => {
 </script>
 
 <style scoped>
-/* 
-  使用 :global() 或将这些样式放在非 scoped 标签中，
-  因为 fixed 定位会脱离父组件的 scoped 范围
-*/
-:global(.page-header),
-:global(.filter-bar),
-:global(.history-stream-container) {
-  /* 手动计算 left 位置 = 侧边栏宽度 + main-content 的 padding */
-  left: calc(var(--sidebar-width) + 40px);
-  /* 手动计算 right 位置 */
-  right: 40px;
-}
-:global(.sidebar.collapsed ~ .main-content .page-header),
-:global(.sidebar.collapsed ~ .main-content .filter-bar),
-:global(.sidebar.collapsed ~ .main-content .history-stream-container) {
-  /* 当侧边栏折叠时，动态调整 left 位置 */
-  left: calc(var(--sidebar-width-collapsed) + 40px);
+/* [移除] 全局 fixed 定位，改為在媒體查詢中處理 */
+/* 桌面端仍然需要 fixed 定位 */
+@media (min-width: 769px) {
+  .page-header,
+  .filter-bar,
+  .history-stream-container {
+    position: fixed;
+    transition: left 0.3s ease-in-out;
+    left: calc(var(--sidebar-width) + 40px);
+    right: 40px;
+  }
+  .sidebar.collapsed ~ .main-content .page-header,
+  .sidebar.collapsed ~ .main-content .filter-bar,
+  .sidebar.collapsed ~ .main-content .history-stream-container {
+    left: calc(var(--sidebar-width-collapsed) + 40px);
+  }
+
+  .page-header { top: 40px; }
+  .filter-bar { top: 110px; }
+  .history-stream-container { top: 180px; bottom: 40px; }
 }
 
 /* --- 主内容区 --- */
@@ -280,6 +283,68 @@ const viewHistoryDetail = (event: HistoryEvent) => {
 
 .loading-state, .empty-state { text-align: center; padding: 40px; color: var(--text-secondary); }
 
+
+/* --- [新增] 響應式樣式 --- */
+@media (max-width: 768px) {
+  .page-header {
+    font-size: 28px;
+    margin-bottom: 20px;
+  }
+
+  /* 2. 篩選欄變為垂直堆疊 */
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch; /* 讓子元素撐滿寬度 */
+  }
+  .filter-select {
+    width: 100%; /* 佔滿寬度 */
+  }
+
+  /* 3. 調整時間流佈局 */
+  .history-stream-container {
+    overflow-y: auto;
+    padding: 20px 20px;
+    z-index: 1;
+    flex-grow: 1; /* 讓其填充剩餘空間 */
+  }
+  .history-event {
+    gap: 15px; /* 減小圖標和卡片的間距 */
+  }
+  .stream-connector {
+    left: 17px; /* 根據圖標寬度調整 */
+  }
+  .event-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+
+  /* 4. [核心] 事件卡片內部變為垂直佈局 */
+  .event-card {
+    flex-direction: column;
+    align-items: flex-start; /* 左對齊 */
+    padding: 16px;
+    width: 380px;
+  }
+  .event-meta {
+    width: 100%;
+    text-align: left; /* 左對齊 */
+    padding-left: 0;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color); /* 添加分割線 */
+    display: flex; /* 讓時間和按鈕在同一行 */
+    justify-content: space-between; /* 兩端對齊 */
+    align-items: center;
+  }
+  .event-timestamp {
+    margin-bottom: 0; /* 移除底部 margin */
+  }
+  
+  .history-event:hover .event-card {
+    transform: none; /* 在移動端移除懸停位移效果 */
+  }
+}
 </style>
 
 <style>
