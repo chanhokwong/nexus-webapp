@@ -738,6 +738,10 @@ const handleRemoveDocument = (doc: DocumentInfo) => {
 .remove-btn:hover { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; }
 
 /* --- 内容预览区 --- */
+.content-preview {
+  /* [優化] 為內容預覽面板增加最小高度，避免在空狀態下過於扁平 */
+  min-height: 400px;
+}
 .content-preview .preview-content {
   flex-grow: 1;
   position: relative; /* 为 panzoom 提供上下文 */
@@ -882,10 +886,62 @@ const handleRemoveDocument = (doc: DocumentInfo) => {
   top: 0; left: 0;
   width: 100%; height: 100%;
 }
-.preview-iframe {
-  width: 100%;
-  height: 100%;
-  border-radius: 8px; /* 让 iframe 边缘也有一点圆角 */
+
+
+/* --- Iframe 样式 --- */
+.preview-iframe { width: 100%; height: 100%; border-radius: 8px; }
+
+/* --- [優化] 響應式佈局 --- */
+
+/* 平板尺寸 (1024px 以下): 縮小側邊欄，讓中間區域更大 */
+@media (max-width: 1024px) {
+  .collaboration-canvas {
+    grid-template-columns: 240px 1fr 240px; /* 縮小左右兩欄 */
+    gap: 16px; /* 減小間距 */
+  }
+  .canvas-panel {
+    padding: 16px; /* 減小面板內邊距 */
+  }
+}
+
+/* 手機尺寸 (768px 以下): 徹底變為單欄垂直堆疊 */
+@media (max-width: 768px) {
+  /* 1. 調整頁面頭部 */
+  .page-header {
+    margin-bottom: 20px;
+  }
+  .page-title {
+    font-size: 28px;
+  }
+  .page-description {
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+
+  /* 2. [核心] 將三欄網格變為單欄垂直佈局 */
+  .collaboration-canvas {
+    grid-template-columns: 1fr; /* 變為單欄 */
+    min-height: auto; /* 移除最小高度，讓高度自適應 */
+    flex-grow: 0; /* 讓容器高度由內容決定，不再填充剩餘空間 */
+  }
+
+  /* 3. [優化] 為每個面板設置最小高度，並確保滾動 */
+  .canvas-panel {
+    min-height: 300px; /* 給每個面板一個合理的最小高度 */
+    padding-bottom: 70px;
+  }
+  
+  /* 內容預覽區在手機上需要特別設定高度，避免過高或過低 */
+  .content-preview {
+    height: 60vh; /* 設置一個基於視口的高度，提供良好的預覽體驗 */
+    min-height: 600px; /* 確保最低高度 */
+  }
+
+  .file-library-list, .ai-toolbox-list {
+    /* 在手機上，讓這兩個列表能完整顯示內容，而不是內部滾動 */
+    overflow-y: visible;
+    flex-grow: 0;
+  }
 }
 
 </style>

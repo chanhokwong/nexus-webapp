@@ -174,6 +174,7 @@ const handleToolClick = (tool: Tool) => {
     font-weight: 500;
     cursor: pointer;
     transition: color 0.3s, border-bottom-color 0.3s;
+    flex-shrink: 0;
 }
 .tab-item:hover {
     color: var(--text-primary);
@@ -201,6 +202,7 @@ const handleToolClick = (tool: Tool) => {
     cursor: pointer;
     transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
     position: relative;
+    overflow: hidden; /* 確保 badge 不會溢出圓角 */
 }
 .tool-card:hover {
     transform: translateY(-5px);
@@ -240,5 +242,32 @@ const handleToolClick = (tool: Tool) => {
   transform: none;
   border-color: var(--border-color);
   box-shadow: none;
+}
+
+/* --- [新增] 響應式樣式 --- */
+@media (max-width: 768px) {
+  /* 1. 調整頁面標題 */
+  .page-header {
+    font-size: 28px;
+  }
+
+  /* 2. 核心：讓標籤導航可水平滾動 */
+  .tool-tabs {
+    overflow-x: auto; /* 允許水平滾動 */
+    padding-bottom: 10px; /* 為滾動條留出空間，防止遮擋下邊框 */
+    margin-bottom: 20px;
+    /* 隱藏滾動條的樣式 (可選，但能提升美觀度) */
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .tool-tabs::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+
+  /* 3. 將網格變為單列列表 */
+  .tool-grid {
+    grid-template-columns: 1fr; /* 單列佈局 */
+    gap: 16px; /* 調整卡片間距 */
+  }
 }
 </style>

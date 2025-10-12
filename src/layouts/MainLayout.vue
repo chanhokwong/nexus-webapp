@@ -1,33 +1,55 @@
 <template>
   <div class="layout-container">
-    <!-- 侧边栏 -->
-    <aside class="sidebar" :class="{ 'collapsed': isSidebarCollapsed }">
+    <!-- 1. [新增] 移动端顶部 Header (只在移动端显示) -->
+    <header class="mobile-header">
+      <div class="brand">
+        <img src="../assets/nexus-logo.png" alt="Nexus Logo" class="sidebar-logo">
+        <span>NEXUS</span>
+      </div>
+      <button class="hamburger-btn" @click="isDrawerOpen = true">
+        <el-icon><Menu /></el-icon>
+      </button>
+    </header>
+
+    <!-- 2. [新增] 抽屉式侧边栏 (只在移动端使用) -->
+    <el-drawer
+      v-model="isDrawerOpen"
+      direction="ltr"
+      :with-header="false"
+      size="260px"
+      custom-class="mobile-drawer"
+    >
+      <!-- 我们在这里“复用”了桌面端侧边栏的几乎所有内部结构 -->
+      <aside class="sidebar mobile-sidebar-content">
+        <div class="sidebar-header">
+          <img src="../assets/nexus-logo.png" alt="Nexus Logo" class="sidebar-logo">
+          <span class="brand-text">NEXUS</span>
+        </div>
+
+        <!-- [優化] 複用組件 -->
+        <NavigationList />
+
+        <div class="sidebar-footer">
+          <div class="user-profile">
+            <UserAvatar :email="userStore.currentUser?.email" />
+            <div class="user-info">
+              <span class="email">{{ userStore.currentUser?.email }}</span>
+              <a href="#" @click.prevent="onLogout" class="logout">{{ $t('sidebar.logout') }}</a>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </el-drawer>
+
+    <!-- 3. 桌面端侧边栏 (添加 desktop-only 类) -->
+    <aside class="sidebar desktop-only" :class="{ 'collapsed': isSidebarCollapsed }">
       <div class="sidebar-header">
         <img src="../assets/nexus-logo.png" alt="Nexus Logo" class="sidebar-logo">
         <span class="brand-text">NEXUS</span>
       </div>
-      <nav class="nav">
-        <ul class="nav-list">
-          <li class="nav-item" :class="{ active: $route.name === 'Dashboard' }">
-            <router-link to="/dashboard" title="主頁"><el-icon><House /></el-icon><span class="nav-text">{{ $t('sidebar.dashboard') }}</span></router-link>
-          </li>
-          <li class="nav-item" :class="{ active: $route.name === 'Files' }">
-            <router-link to="/files" title="文件"><el-icon><Files /></el-icon><span class="nav-text">{{ $t('sidebar.files') }}</span></router-link>
-          </li>
-          <li class="nav-item" :class="{ active: $route.name && $route.name.toString().startsWith('Workspace') }">
-            <router-link to="/workspaces" title="工作台"><el-icon><Collection /></el-icon><span class="nav-text">{{ $t('sidebar.workspaces') }}</span></router-link>
-          </li>
-          <li class="nav-item" :class="{ active: $route.name === 'History' }">
-            <router-link to="/history" title="歷史回顧"><el-icon><Clock /></el-icon><span class="nav-text">{{ $t('sidebar.history') }}</span></router-link>
-          </li>
-          <li class="nav-item" :class="{ active: $route.name === 'Tools' }">
-            <router-link to="/tools" title="工具箱"><el-icon><Suitcase /></el-icon><span class="nav-text">{{ $t('sidebar.tools') }}</span></router-link>
-          </li>
-          <li class="nav-item" :class="{ active: $route.name === 'Settings' }">
-            <router-link to="/settings" title="設定"><el-icon><Setting /></el-icon><span class="nav-text">{{ $t('sidebar.settings') }}</span></router-link>
-          </li>
-        </ul>
-      </nav>
+
+      <!-- [優化] 複用組件 -->
+      <NavigationList />
       
       <!-- 折叠按钮 -->
       <div class="sidebar-toggle" @click="isSidebarCollapsed = !isSidebarCollapsed">
@@ -45,20 +67,49 @@
       </div>
     </aside>
 
-    <!-- 主内容区 -->
+    <!-- 4. 主内容区 (保持不变) -->
     <main class="main-content">
       <router-view :key="localeStore.currentLocale" />
     </main>
+
+    <!-- 5. [新增] 移动端底部标签栏 (只在移动端显示) -->
+    <footer class="mobile-footer">
+      <router-link to="/dashboard" class="footer-item">
+        <el-icon><House /></el-icon>
+        <span>{{ $t('sidebar.dashboard') }}</span>
+      </router-link>
+      <router-link to="/workspaces" class="footer-item">
+        <el-icon><Collection /></el-icon>
+        <span>{{ $t('sidebar.workspaces') }}</span>
+      </router-link>
+      <router-link to="/files" class="footer-item">
+        <el-icon><Files /></el-icon>
+        <span>{{ $t('sidebar.files') }}</span>
+      </router-link>
+      <router-link to="/tools" class="footer-item">
+        <el-icon><Files /></el-icon>
+        <span>{{ $t('sidebar.tools') }}</span>
+      </router-link>
+      <router-link to="/settings" class="footer-item">
+        <el-icon><Setting /></el-icon>
+        <span>{{ $t('sidebar.settings') }}</span>
+      </router-link>
+    </footer>
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/user';
 import UserAvatar from '../components/UserAvatar.vue';
-import { House, Files, Collection, Clock, Suitcase, Setting, DArrowLeft } from '@element-plus/icons-vue';
+import { House, Files, Collection, Setting, DArrowLeft } from '@element-plus/icons-vue';
 import { useLocaleStore } from '../stores/locale';
+import { ElDrawer } from 'element-plus';
+import NavigationList from '../components/NavigationList.vue';
+
+
+// [新增] 移动端抽屉的状态
+const isDrawerOpen = ref(false);
 
 const isSidebarCollapsed = ref(false);
 const router = useRouter();
@@ -66,7 +117,6 @@ const userStore = useUserStore();
 const onLogout = () => { router.push('/login'); userStore.logout(); };
 const localeStore = useLocaleStore();
 </script>
-
 <style scoped>
 /* --- 在组件内部定义所有样式和变量 --- */
 .layout-container {
@@ -145,7 +195,7 @@ const localeStore = useLocaleStore();
 /* --- [核心修正] 折叠状态样式 --- */
 .sidebar.collapsed {
   width: var(--sidebar-width-collapsed);
-  padding: 24px 12px;
+  padding: 24px 24px 24px 20px;
 }
 .sidebar.collapsed .brand-text,
 .sidebar.collapsed .nav-text,
@@ -180,8 +230,73 @@ const localeStore = useLocaleStore();
 .sidebar.collapsed + .main-content {
   margin-left: var(--sidebar-width-collapsed);
 }
-</style>
 
+
+/* 默认情况下，移动端元素是隐藏的 */
+.mobile-header, .mobile-footer {
+  display: none;
+}
+
+/* --- 响应式媒体查询 --- */
+@media (max-width: 768px) {
+  /* 1. 隐藏桌面端侧边栏 */
+  .sidebar.desktop-only {
+    display: none;
+  }
+  
+  /* 2. 显示移动端元素 */
+  .mobile-header, .mobile-footer {
+    display: flex; /* 或 grid */
+  }
+
+  /* 3. 调整主内容区的布局 */
+  .main-content {
+    margin-left: 0; /* 移除为桌面侧边栏留出的边距 */
+    padding: 20px;
+    /* 为固定的顶部和底部栏留出空间 */
+    padding-top: 80px; 
+    padding-bottom: 80px;
+    height: 100vh; /* 确保它可以滚动 */
+    overflow-y: auto;
+  }
+
+  /* 4. 移动端顶部 Header 样式 */
+  .mobile-header {
+    position: fixed; top: 0; left: 0;
+    width: 100%;
+    z-index: 5; /* 低于抽屉，高于内容 */
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: var(--sidebar-bg);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-color);
+  }
+  .hamburger-btn { background: none; border: none; color: var(--text-primary); font-size: 24px; cursor: pointer; }
+
+  /* 5. 移动端底部标签栏样式 */
+  .mobile-footer {
+    position: fixed; bottom: 0; left: 0;
+    width: 100%;
+    z-index: 5;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    background: var(--sidebar-bg);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border-color);
+  }
+  .footer-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 4px; padding: 10px 0;
+    text-decoration: none; color: var(--text-secondary);
+    font-size: 12px;
+    transition: color 0.2s;
+  }
+  .footer-item.router-link-exact-active {
+    color: var(--text-primary);
+  }
+}
+</style>
 <style>
 /* --- [核心] MessageBox 全局自定义样式 --- */
 .el-overlay.is-message-box .el-overlay-message-box {
@@ -308,4 +423,18 @@ const localeStore = useLocaleStore();
   background: hsl(233, 62%, 18%) !important;
   border-color: rgba(88, 94, 227, 0.5) !important;
 }
-</style>
+
+/* [新增] 为移动端抽屉添加全局样式 */
+.mobile-drawer {
+  background-color: transparent !important; /* 让抽屉背景透明，只显示 sidebar 的背景 */
+}
+.mobile-drawer .el-drawer__body {
+  padding: 0 !important;
+}
+.mobile-sidebar-content {
+  /* 这个侧边栏的内部样式将自动继承 .sidebar 的规则 */
+  height: 100%;
+  border-right: none; /* 抽屉模式下不需要右边框 */
+  position: static; /* 覆盖 fixed 定位 */
+}
+</style>]

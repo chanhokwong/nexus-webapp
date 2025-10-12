@@ -1,19 +1,19 @@
 <template>
-  <div>
+  <div class="files-container">
     <header class="page-header">
-      <h1 class="page-title">{{ $t('files.title') }}</h1>
-      <button class="btn-upload" @click="isUploadModalVisible = true">
+      <h1 class="page-title desktop-view">{{ $t('files.title') }}</h1>
+      <button class="btn-upload desktop-view" @click="isUploadModalVisible = true">
         <el-icon><Upload /></el-icon>
-        <span>{{ $t('files.upload_button') }}</span>
+        <span class="desktop-only">{{ $t('files.upload_button') }}</span>
       </button>
     </header>
 
-    <div class="function-bar">
+    <div class="function-bar desktop-view">
       <div class="search-wrapper">
         <el-icon class="search-icon"><Search /></el-icon>
         <input type="search" class="filter-input" :placeholder="searchPlaceholder" v-model="searchQuery">
       </div>
-      <div class="sort-options">
+      <div class="sort-options desktop-only">
         <el-select 
           v-model="sortBy" 
           class="filter-select" 
@@ -27,7 +27,8 @@
     </div>
 
     <div class="file-list-panel">
-      <div class="table-header-wrapper">
+      <!-- 1. 桌面端：显示表格 (默认显示) -->
+      <div class="table-wrapper desktop-view">
         <table class="file-table">
           <thead>
             <tr>
@@ -41,7 +42,7 @@
         </table>
       </div>
       <!-- 2. 独立的、可滚动的内容区域 -->
-      <div class="table-body-wrapper" ref="scrollContainerRef" @scroll="updateScrollButtons">
+      <div class="table-body-wrapper desktop-view" ref="scrollContainerRef" @scroll="updateScrollButtons">
         <table class="file-table">
           <tbody>
             <tr v-if="isLoading">
@@ -68,7 +69,7 @@
                       <el-icon><Download /></el-icon>
                     </button>
                   </a>
-                  <button :title="deleteText" class="action-btn" @click.stop="handleDelete(file)"><el-icon><Delete /></el-icon></button>
+                  <button :title="deleteText" class="action-btn" @click="handleDelete(file)"><el-icon><Delete /></el-icon></button>
                   <button :title="moreText" class="action-btn"><el-icon><MoreFilled /></el-icon></button>
                 </div>
               </td>
@@ -76,6 +77,37 @@
           </tbody>
         </table>
       </div>
+
+      <!-- 2. 移动端：显示卡片列表 (默认隐藏) -->
+      <div class="card-list-wrapper mobile-view">
+        <div v-if="isLoading" class="loading-state">...</div>
+        <div v-else-if="filteredAndSortedFiles.length === 0" class="empty-state">...</div>
+        <div 
+          v-for="file in filteredAndSortedFiles" 
+          :key="file.id" 
+          class="file-card"
+          @click="previewFile(file)"
+        >
+          <div class="card-main">
+            <div class="file-info">
+              <el-icon class="file-icon"><Document /></el-icon>
+              <span class="file-name">{{ file.filename }}</span>
+            </div>
+            <div class="action-buttons">
+              <a :href="file.url" :download="file.filename" target="_blank" @click.stop>
+                <button title="下載" class="action-btn"><el-icon><Download /></el-icon></button>
+              </a>
+              <button title="刪除" class="action-btn" @click.stop="handleDelete(file)"><el-icon><Delete /></el-icon></button>
+            </div>
+          </div>
+          <div class="card-details">
+            <span class="pill" :class="file.file_type.toLowerCase()">{{ file.file_type }}</span>
+            <span class="file-size">{{ file.size_mb.toFixed(2) }}MB</span>
+          </div>
+          <p v-if="file.ai_summary" class="summary-text">{{ file.ai_summary }}</p>
+        </div>
+      </div>
+
       <div class="scroll-controls" v-show="canScroll">
         <button class="scroll-btn" @click="scrollUp" :disabled="!canScrollUp" title="向上滾動">
           <el-icon><ArrowUp /></el-icon>
@@ -639,6 +671,113 @@ tr:hover .action-buttons {
 .scroll-btn:disabled {
     opacity: 0.3;
     cursor: not-allowed;
+}
+
+/* --- [核心最终修正] 在文件末尾添加响应式样式 --- */
+
+/* 默认情况下，移动端视图是隐藏的 */
+.mobile-view {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* 当屏幕宽度小于 768px 时 */
+
+  /* 1. 切换视图：隐藏桌面，显示移动 */
+  .desktop-view, .desktop-only {
+    display: none;
+  }
+  .mobile-view {
+    display: block;
+    height: 100%;
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  /* 2. 调整页面布局 */
+  .page-header {
+    margin-bottom: 20px;
+  }
+  .page-title {
+    font-size: 28px;
+  }
+  .btn-upload {
+    padding: 8px; /* 变为纯图标按钮 */
+    border-radius: 50%;
+  }
+
+  .function-bar {
+    margin-bottom: 20px;
+  }
+  
+  .file-list-panel {
+    /* 移除 fixed 布局 */
+    position: static;
+    flex-grow: 1; /* 让它占满剩余空间 */
+    padding: 0;
+  }
+  
+  /* 3. 移动端卡片样式 */
+  .file-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .card-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .file-info { /* 复用桌面版样式 */
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+  }
+  .file-icon { font-size: 24px; color: var(--text-secondary); }
+  .file-name {
+    /* 防止文件名过长破坏布局 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .action-buttons { /* 复用桌面版样式 */
+    display: flex;
+    gap: 8px;
+  }
+
+  .card-details {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .file-size {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .summary-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    /* 多行文本省略 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  
+  .card-list-wrapper {
+    padding-bottom: 50px;
+  }
 }
 </style>
 

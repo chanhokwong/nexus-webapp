@@ -3,8 +3,8 @@
     <h1 class="page-header">{{ $t('settings.title') }}</h1>
 
     <div class="settings-container">
-      <!-- 左侧设定树 -->
-      <ul class="settings-tree">
+      <!-- 左侧设定树 (僅桌面端顯示) -->
+      <ul class="settings-tree desktop-view">
         <li class="tree-item" :class="{ active: activePanel === 'account' }">
           <a href="#" class="tree-link" @click.prevent="activePanel = 'account'">{{ $t('settings.account_security') }}</a>
         </li>
@@ -18,6 +18,20 @@
           <a href="#" class="tree-link" @click.prevent="activePanel = 'danger'">{{ $t('settings.delete_account') }}</a>
         </li>
       </ul>
+
+      <!-- [新增] 移动端导航下拉菜单 (僅移動端顯示) -->
+      <div class="mobile-nav mobile-view">
+        <el-select 
+          v-model="activePanel" 
+          class="mobile-nav-select"
+          popper-class="nexus-select-popper"
+        >
+          <el-option :label="$t('settings.account_security')" value="account" />
+          <el-option :label="$t('settings.preferences')" value="preferences" />
+          <el-option :label="$t('settings.feedback')" value="feedback" />
+          <el-option :label="$t('settings.delete_account')" value="danger" class="danger-option" />
+        </el-select>
+      </div>
 
       <!-- 右侧内容面板 -->
       <div class="settings-panels">
@@ -331,6 +345,7 @@ const handleDeleteAccount = () => {
 }
 .settings-panels { 
   position: relative; 
+  min-height: 400px; /* 給一個最小高度，防止在切換時塌陷 */
 }
 .setting-panel {
     position: absolute; width: 100%;
@@ -456,4 +471,106 @@ textarea.form-input {
 .form-status.success { color: #4caf50; }
 .form-status.error { color: #f44336; }
 .form-status.info { color: var(--text-secondary); }
+
+/* --- [新增] 響應式樣式 --- */
+.mobile-view { display: none; }
+
+@media (max-width: 768px) {
+  /* 1. 隱藏桌面元素，顯示移動元素 */
+  .desktop-view { display: none; }
+  .mobile-view { display: block; }
+
+  /* 2. 調整頁面頭部 */
+  .page-header {
+    font-size: 28px;
+    margin-bottom: 20px;
+  }
+
+  /* 3. 核心佈局轉換：從網格變為垂直堆疊 */
+  .settings-container {
+    grid-template-columns: 1fr; /* 單列佈局 */
+    gap: 20px;
+    height: auto; /* 高度自適應 */
+  }
+
+  /* 4. 移動端導航樣式 */
+  .mobile-nav-select {
+    width: 100%;
+  }
+  .mobile-nav-select :deep(.el-input__wrapper) {
+    background-color: var(--panel-bg, rgba(29, 31, 74, 0.5)) !important;
+    border: 1px solid var(--border-color, rgba(88, 94, 227, 0.3)) !important;
+    backdrop-filter: blur(5px);
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    padding: 8px 12px; /* 調整內邊距以獲得更好看的高度 */
+  }
+  .mobile-nav-select :deep(.el-input__inner) {
+    color: var(--text-primary) !important;
+    font-weight: 500;
+    font-size: 16px;
+  }
+  .danger-option {
+    color: #E53935 !important;
+  }
+  .danger-option.hover, .danger-option:hover {
+    background-color: rgba(229, 57, 53, 0.1) !important;
+  }
+
+  /* 5. 調整面板和表單項樣式 */
+  .settings-panels {
+    position: static; /* 移除絕對定位 */
+    min-height: 0;
+  }
+  .setting-panel {
+    position: static;
+    width: 100%;
+    margin-bottom: 0; /* 移除外邊距，因為容器已有 gap */
+    padding: 20px 16px; /* 調整內邊距 */
+    display: none;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: none;
+  }
+  .setting-panel.active {
+    display: block; /* 只有 active 的面板才顯示 */
+    padding-bottom: 60px;
+  }
+  
+  .setting-item {
+    flex-direction: column;
+    align-items: stretch; /* [核心] 讓子元素撐滿寬度 */
+    gap: 12px;
+    /* [美化] 為每個設定項增加邊框，使其像獨立的卡片區域 */
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 24px;
+    margin-bottom: 24px;
+  }
+  .setting-item:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+  .setting-item > label {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .form-input, .form-select, .input-group, .btn {
+    width: 100%; /* 讓輸入元素和按鈕佔滿寬度 */
+    min-width: 0;
+  }
+  .input-group {
+    align-items: stretch; /* 讓組內元素也佔滿寬度 */
+    gap: 16px; /* 增加輸入框之間的距離 */
+  }
+  .setting-item > .module-description {
+    text-align: left; /* 描述文字左對齊 */
+  }
+  .danger-description {
+    width: 100%; /* 確保危險區域的描述文字能換行 */
+    white-space: normal;
+  }
+}
 </style>

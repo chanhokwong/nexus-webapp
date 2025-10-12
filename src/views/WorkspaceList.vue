@@ -4,7 +4,8 @@
       <h1 class="page-title">{{ $t('workspaceList.myWorkspace') }}</h1>
       <button class="btn-create" @click="openCreateModal">
         <el-icon><Plus /></el-icon>
-        <span>{{ $t('workspaceList.createNewWorkspace') }}</span>
+        <!-- [改造] 在移動端隱藏文字 -->
+        <span class="desktop-only">{{ $t('workspaceList.createNewWorkspace') }}</span>
       </button>
     </header>
 
@@ -21,7 +22,7 @@
     <!-- 數據加載完成後顯示 -->
     <div v-else class="workspace-grid">
       <!-- 新建卡片 -->
-      <div class="workspace-card card-new" @click="openCreateModal">
+      <div class="workspace-card card-new desktop-only" @click="openCreateModal">
         <el-icon class="plus-icon"><Plus /></el-icon>
         <h2 class="card-title">{{ $t('workspaceList.createNewWorkspace') }}</h2>
       </div>
@@ -236,7 +237,10 @@ const handleDelete = (workspace: Workspace) => {
 </script>
 
 <style scoped>
-/* 所有样式保持不变 */
+.workspace-list-container {
+  /* [改造] 給容器一個最小高度，防止移動端內容不足時頁面塌陷 */
+  min-height: 100%;
+}
 .page-header {
     display: flex; justify-content: space-between;
     align-items: center; margin-bottom: 30px;
@@ -390,6 +394,48 @@ const handleDelete = (workspace: Workspace) => {
     background-color: var(--active-bg);
 }
 
+/* --- [新增] 響應式樣式 --- */
+@media (max-width: 768px) {
+  /* 1. 調整頁面頭部 */
+  .page-header {
+    margin-bottom: 20px;
+  }
+  .page-title {
+    font-size: 28px;
+  }
+  .btn-create {
+    padding: 10px; /* 變為純圖標按鈕 */
+    border-radius: 50%;
+  }
+  .desktop-only {
+    display: none; /* 隱藏按鈕文字 */
+  }
+
+  /* 2. 移除固定佈局，改為正常文檔流 */
+  .workspace-grid {
+    position: static;
+    width: 100%;
+    overflow-y: visible;
+    padding: 0;
+    
+    /* [核心] 將網格變為單列列表 */
+    grid-template-columns: 1fr;
+    gap: 16px; /* 調整卡片間距 */
+  }
+
+  /* 3. 調整卡片樣式以適應列表模式 */
+  .workspace-card {
+    min-height: auto; /* 移除最小高度限制 */
+    max-height: none; /* 移除最大高度限制 */
+  }
+  .card-navigation-area {
+    padding: 16px; /* 縮小內邊距 */
+  }
+  .card-options {
+    top: 12px;
+    right: 12px;
+  }
+}
 </style>
 <style>
 /* 
