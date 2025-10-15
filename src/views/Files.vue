@@ -69,7 +69,7 @@
                       <el-icon><Download /></el-icon>
                     </button>
                   </a>
-                  <button :title="deleteText" class="action-btn" @click="handleDelete(file)"><el-icon><Delete /></el-icon></button>
+                  <button :title="deleteText" class="action-btn" @click.stop="handleDelete(file)"><el-icon><Delete /></el-icon></button>
                   <button :title="moreText" class="action-btn"><el-icon><MoreFilled /></el-icon></button>
                 </div>
               </td>
