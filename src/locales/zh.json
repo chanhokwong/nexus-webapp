@@ -238,7 +238,9 @@
     "fileRemoveSuccess": "文件移除成功",
     "fileRemoveFail": "文件移除失敗",
     "notesStoreTitle": " - 學習筆記",
-    "noteSavedMsg": "筆記已自動保存到歷史回顧"
+    "noteSavedMsg": "筆記已自動保存到歷史回顧",
+    "ai_tutor_title": "AI導師",
+    "ai_tutor_desc": "與導師討論更深層次的問題"
   },
   "workspaceList": {
     "myWorkspace": "我的工作台",

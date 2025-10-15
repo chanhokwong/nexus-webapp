@@ -63,7 +63,7 @@
       </div>
 
       <!-- 第二栏：内容预览 -->
-       <div class="canvas-panel content-preview" :class="{ 'fullscreen': isFullscreen }">
+      <div class="canvas-panel content-preview" :class="{ 'fullscreen': isFullscreen }">
         <div class="panel-header">
           <h2 class="panel-title">{{ $t('workspaceDetail.contentPreview') }}</h2>
           <button 
@@ -97,6 +97,10 @@
 
           <div v-else-if="aiResultType === 'graph' && aiResult" class="view-wrapper graph-wrapper">
             <KnowledgeGraphRenderer :graph-string="aiResult.mermaid_code" />
+          </div>
+
+          <div v-else-if="aiResultType === 'chat'" class="view-wrapper">
+            <AiTutorChat :workspace-id="workspace.id" />
           </div>
 
           <div v-else-if="previewContent" class="view-wrapper scrollable">
@@ -136,6 +140,11 @@
             <div class="tool-title">{{ $t('workspaceDetail.generateQuiz') }}</div>
             <div class="tool-description">{{ $t('workspaceDetail.generateQuizDescribe') }}</div>
           </button>
+          <button class="ai-tool" :disabled="isAiLoading" @click="runAiTool('chat')">
+            <div class="tool-title">{{ $t('workspaceDetail.ai_tutor_title') }}</div>
+            <div class="tool-description">{{ $t('workspaceDetail.ai_tutor_desc') }}</div>
+          </button>
+
         </div>
       </div>
     </div>
@@ -260,6 +269,7 @@ import { saveNote, type SaveNotePayload } from '../api/notes';
 import QuizPlayer from '../components/QuizPlayer.vue';
 import MarkdownRenderer from '../components/MarkdownRenderer.vue'; 
 import KnowledgeGraphRenderer from '../components/KnowledgeGraphRenderer.vue';
+import AiTutorChat from '../components/AiTutorChat.vue';
 
 import { useI18n } from 'vue-i18n';
 
@@ -281,7 +291,7 @@ const selectedDocIds = ref<number[]>([]); // 存储在弹窗中选择的文档ID
 const isAiLoading = ref(false); // 控制AI工具的加载状态
 
 // [核心] 新增 ref 来存储 AI 结果
-const aiResultType = ref<'quiz' | 'notes' | 'graph' | null>(null);
+const aiResultType = ref<'quiz' | 'notes' | 'graph' | 'chat' | null>(null);
 const aiResult = ref<any | null>(null); // 用于存储原始的 AI 结果对象
 
 // 添加全屏状态
@@ -457,7 +467,7 @@ const handleUpload = async (options: any) => {
 };
 
 // --- [核心最终修正] AI 工具调用主函数 ---
-const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz') => {
+const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat') => {
   if (!workspace.value) return;
 
   // 路标 1: 函数开始
@@ -471,6 +481,16 @@ const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz') => {
   }
   // 路标 2: 工作台检查通过
   console.log(`[DEBUG] 2. Workspace check passed. Workspace ID: ${workspace.value.id}`);
+
+  if (toolType === 'chat') {
+    // 对于“聊天”这种交互式工具，我们只切换视图
+    aiResultType.value = 'chat';
+    aiResult.value = null; // 确保其他结果被清空
+    previewContent.value = null;
+    selectedDocumentId.value = null; // 清除文件选择
+    console.log("[DEBUG] Switched to AI Tutor chat view.");
+    return; // 直接退出，不执行后续的 API 调用
+  }
 
   isAiLoading.value = true;
   isPreviewLoading.value = false;

@@ -150,14 +150,16 @@ const viewHistoryDetail = (event: HistoryEvent) => {
       break;
     case 'chat':
       // 假设未来会有一个聊天记录页面
-      // router.push(`/chat-history/${event.id}`);
-      ElMessage.info(`導航到聊天歷史詳情頁 (ID: ${event.id}) 的功能待開發。`);
+      router.push(`/chat-history/${event.id}`);
       break;
     case 'graph':
       router.push(`/knowledge-graphs/${event.id}`);
       break;
     case 'notes':
       router.push(`/notes/${event.id}`);
+      break;
+    case 'chat':
+      router.push(`/chat-history/${event.id}`);
       break;
     default:
       ElMessage.info(`查看 “${event.title}” 詳情的功能待開發。`);

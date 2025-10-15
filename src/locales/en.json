@@ -238,7 +238,9 @@
     "fileRemoveSuccess": "File removal successful",
     "fileRemoveFail": "File removal failed",
     "notesStoreTitle": " - Study Notes",
-    "noteSavedMsg": "Notes have been automatically saved to the history review."
+    "noteSavedMsg": "Notes have been automatically saved to the history review.",
+    "ai_tutor_title": "AI Tutor",
+    "ai_tutor_desc": "Discuss more advanced learning questions with the tutor."
   },
   "workspaceList": {
     "myWorkspace": "My Workspace",

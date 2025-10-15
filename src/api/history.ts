@@ -1,5 +1,6 @@
 import apiClient from './axios';
 import { rawApiClient } from './axios'; // [核心] 导入 rawApiClient
+import type { ChatMessage } from './ai';
 
 // --- 类型定义 ---
 // 定义一个统一的历史事件类型
@@ -168,4 +169,11 @@ export const saveKnowledgeGraph = (data: SaveGraphPayload): Promise<GraphDetail>
  */
 export const saveQuizResult = (data: SaveQuizPayload): Promise<any> => {
   return apiClient.post('/quiz-history/save', data);
+};
+
+/**
+ * [新增] 4.1 - 获取单个会话的完整聊天记录
+ */
+export const getChatHistoryDetail = (sessionId: string): Promise<ChatMessage[]> => {
+  return apiClient.get(`/chat-history/${sessionId}`);
 };

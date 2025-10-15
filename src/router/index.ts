@@ -19,6 +19,7 @@ const History = () => import('../views/History.vue');
 const QuizReview = () => import('../views/QuizReview.vue');
 const NoteReview = () => import('../views/NoteReview.vue');
 const GraphReview = () => import('../views/GraphReview.vue');
+const ChatReview = () => import('../views/ChatReview.vue');
 // 導入探索工具頁面組件
 const Tools = () => import('../views/Tools.vue');
 // 導入設置頁面組件
@@ -80,6 +81,11 @@ const routes = [
         path: 'knowledge-graphs/:id', // 动态路由，匹配 graph_id
         name: 'GraphReview', 
         component: GraphReview 
+      },
+      { 
+        path: 'chat-history/:id', // 动态路由，匹配 session_id
+        name: 'ChatReview', 
+        component: ChatReview 
       },
       { path: 'tools', 
         name: 'Tools', 

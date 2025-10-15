@@ -1,3 +1,5 @@
+import { useUserStore } from '../stores/user';
+import { useLocaleStore } from '../stores/locale';
 import { longTimeoutApiClient } from './axios';
 // import apiClient, { longTimeoutApiClient } from './axios';
 
@@ -18,6 +20,21 @@ export interface QuizResponse {
     options: string[];
     answer: string;
   }[];
+}
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+export interface Source {
+  document_id: number;
+  filename: string;
+  page_number?: number;
+}
+export interface QueryResponse {
+  answer: string;
+  sources: Source[];
+  session_id: string;
 }
 
 // --- API 函数 ---
@@ -42,4 +59,60 @@ export const generateNotes = (workspaceId: number | string): Promise<NotesRespon
  */
 export const generateQuiz = (workspaceId: number | string): Promise<QuizResponse> => {
   return longTimeoutApiClient.post(`/workspaces/${workspaceId}/generate-quiz`);
+};
+
+/**
+ * [核心] 3.8 - 工作台内 AI 导师对话 (流式)
+ * @param workspaceId - 工作台 ID
+ * @param query - 用户的问题
+ * @param history - 聊天历史
+ * @param sessionId - [新增] 标识当前或历史会话的 ID
+ * @param onDelta - 接收到一小块数据时的回调函数
+ * @param onComplete - 整个流结束时的回调函数
+ */
+export const streamWorkspaceQuery = async (
+  workspaceId: number | string,
+  query: string,
+  history: ChatMessage[],
+  sessionId: string,
+  onDelta: (chunk: string) => void,
+  onComplete: () => void,
+) => {
+  const userStore = useUserStore();
+  const localeStore = useLocaleStore();
+  
+  const response = await fetch(`https://api.nexus-ai-edu.app/workspaces/${workspaceId}/query`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${userStore.token}`,
+      'Accept-Language': localeStore.currentLocale,
+    },
+    body: JSON.stringify({
+      query: query,
+      history: history,
+      session_id: sessionId,
+      stream: true, // [关键] 告诉后端我们需要流式响应
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`API request failed with status ${response.status}`);
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new Error("Failed to get readable stream.");
+  }
+
+  const decoder = new TextDecoder();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      onComplete(); // 流结束
+      break;
+    }
+    const chunk = decoder.decode(value);
+    onDelta(chunk); // 处理每一小块数据
+  }
 };
