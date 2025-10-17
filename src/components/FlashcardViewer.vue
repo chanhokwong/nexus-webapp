@@ -4,7 +4,7 @@
     <div class="card-container" :class="{ flipped: isFlipped }" @click="isFlipped = !isFlipped">
       <div class="card-face card-front">
         <div class="card-content">
-          <span class="card-counter">{{ currentIndex + 1 }} / {{ cards.length }}</span>
+          <span class="card-counter">{{ currentIndex + 1 }} / {{ cards?.length }}</span>
           <!-- [核心] 2. 再次确认 currentCard 存在 -->
           <h3 v-if="currentCard" class="card-title">{{ currentCard.title }}</h3>
         </div>
@@ -20,8 +20,8 @@
       <button @click="prevCard" :disabled="currentIndex === 0">
         <el-icon><ArrowLeft /></el-icon>
       </button>
-      <span>{{ currentIndex + 1 }} / {{ cards.length }}</span>
-      <button @click="nextCard" :disabled="currentIndex === cards.length - 1">
+      <span>{{ currentIndex + 1 }} / {{ cards?.length }}</span>
+      <button @click="nextCard" :disabled="currentIndex === (cards?.length || 0) - 1">
         <el-icon><ArrowRight /></el-icon>
       </button>
     </div>
