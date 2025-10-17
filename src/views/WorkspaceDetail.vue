@@ -103,6 +103,10 @@
             <AiTutorChat :workspace-id="workspace.id" />
           </div>
 
+          <div v-else-if="aiResultType === 'clue_sheet' && aiResult?.cards" class="view-wrapper">
+            <FlashcardViewer :cards="aiResult.cards" />
+          </div>
+
           <div v-else-if="previewContent" class="view-wrapper scrollable">
             <div class="content-text">{{ previewContent }}</div>
           </div>
@@ -139,6 +143,10 @@
           <button class="ai-tool" :disabled="isAiLoading" @click="runAiTool('quiz')">
             <div class="tool-title">{{ $t('workspaceDetail.generateQuiz') }}</div>
             <div class="tool-description">{{ $t('workspaceDetail.generateQuizDescribe') }}</div>
+          </button>
+          <button class="ai-tool" :disabled="isAiLoading" @click="runAiTool('clue_sheet')">
+            <div class="tool-title">{{ $t('workspaceDetail.gen_clue_sheet_title') }}</div>
+            <div class="tool-description">{{ $t('workspaceDetail.gen_clue_sheet_desc') }}</div>
           </button>
           <button class="ai-tool" :disabled="isAiLoading" @click="runAiTool('chat')">
             <div class="tool-title">{{ $t('workspaceDetail.ai_tutor_title') }}</div>
@@ -227,7 +235,7 @@
     top="5vh"
     destroy-on-close
     :modal-class="'nexus-dialog-modal'" 
-    class="nexus-dialog-up preview-dialog"
+    class="nexus-dialog preview-dialog"
   >
     <!-- 
       只有在 previewingFile 和 url 都存在时才渲染 iframe，
@@ -257,10 +265,10 @@ import { getWorkspaceById, addDocumentsToWorkspace, removeDocumentFromWorkspace,
 import { getAllUserDocuments, uploadDocument, type DocumentInfo } from '../api/documents';
 
 // [核心] 导入所有 AI 相关的 API 函数
-import { generateKnowledgeGraph, generateNotes, generateQuiz, type QuizResponse, type KnowledgeGraphMermaidResponse } from '../api/ai';
+import { generateKnowledgeGraph, generateNotes, generateQuiz, generateClueSheet, type ClueSheetResponse, type QuizResponse, type KnowledgeGraphMermaidResponse } from '../api/ai';
 
 // [核心] 导入新的 API 函数和类型
-import { saveKnowledgeGraph, type SaveGraphPayload } from '../api/history';
+import { saveKnowledgeGraph, type SaveGraphPayload, saveClueSheet, type SaveClueSheetPayload } from '../api/history';
 
 // [核心] 导入 saveNote 和新的 SaveNotePayload 类型
 import { saveNote, type SaveNotePayload } from '../api/notes';
@@ -270,6 +278,7 @@ import QuizPlayer from '../components/QuizPlayer.vue';
 import MarkdownRenderer from '../components/MarkdownRenderer.vue'; 
 import KnowledgeGraphRenderer from '../components/KnowledgeGraphRenderer.vue';
 import AiTutorChat from '../components/AiTutorChat.vue';
+import FlashcardViewer from '../components/FlashcardViewer.vue';
 
 import { useI18n } from 'vue-i18n';
 
@@ -291,7 +300,7 @@ const selectedDocIds = ref<number[]>([]); // 存储在弹窗中选择的文档ID
 const isAiLoading = ref(false); // 控制AI工具的加载状态
 
 // [核心] 新增 ref 来存储 AI 结果
-const aiResultType = ref<'quiz' | 'notes' | 'graph' | 'chat' | null>(null);
+const aiResultType = ref<'quiz' | 'notes' | 'graph' | 'chat' | 'clue_sheet' | null>(null);
 const aiResult = ref<any | null>(null); // 用于存储原始的 AI 结果对象
 
 // 添加全屏状态
@@ -351,6 +360,7 @@ const fileRemoveSuccess = computed(() => t('workspaceDetail.fileRemoveSuccess'))
 const fileRemoveFail = computed(() => t('workspaceDetail.fileRemoveFail'));
 const notesStoreTitle = computed(() => t('workspaceDetail.notesStoreTitle'));
 const noteSavedMsg = computed(() => t('workspaceDetail.noteSavedMsg'));
+const clue_sheet = computed(() => t('workspaceDetail.gen_clue_sheet_title'));
 
 // --- 数据获取与刷新 ---
 
@@ -467,7 +477,7 @@ const handleUpload = async (options: any) => {
 };
 
 // --- [核心最终修正] AI 工具调用主函数 ---
-const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat') => {
+const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat' | 'clue_sheet') => {
   if (!workspace.value) return;
 
   // 路标 1: 函数开始
@@ -501,6 +511,7 @@ const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat') => {
     case 'graph': toolName = knwoledgeGraph.value; break;
     case 'notes': toolName = notes.value; break;
     case 'quiz': toolName = quiz.value; break;
+    case 'clue_sheet': toolName = clue_sheet.value; break;
   }
   
   aiResultType.value = toolType; // 先设置类型，以便 UI 切换
@@ -594,6 +605,34 @@ const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat') => {
         const quizResponse: QuizResponse = await generateQuiz(workspaceId);
         aiResult.value = quizResponse; // [关键] 存储原始的 quiz 对象
         previewContent.value = null;
+        break;
+
+      case 'clue_sheet':
+        const clueSheetResponse: ClueSheetResponse = await generateClueSheet(workspaceId);
+        aiResultType.value = 'clue_sheet'; 
+
+        // 2. [关键] 自动调用保存 API
+        if (clueSheetResponse && clueSheetResponse.cards) {
+          
+          // 准备要保存的数据
+          const payload: SaveClueSheetPayload = {
+            title: clueSheetResponse.title || `${workspace.value.name} - 記憶卡片`,
+            cards: clueSheetResponse.cards,
+            workspace_id: workspaceId,
+          };
+
+          try {
+            // 在后台悄悄保存，不阻塞 UI
+            saveClueSheet(payload).then(savedClueSheet => {
+              console.log("Clue sheet saved successfully with ID:", savedClueSheet.id);
+              ElMessage.success({ message: '記憶卡片已自動保存', duration: 2000 });
+            });
+          } catch (saveError) {
+            console.error("Failed to auto-save clue sheet:", saveError);
+          }
+        }
+
+        aiResult.value = clueSheetResponse; // clueSheetResponse 现在是正确的对象 { title, cards }
         break;
     }
     
@@ -909,6 +948,30 @@ const handleRemoveDocument = (doc: DocumentInfo) => {
   width: 100%; height: 100%;
 }
 
+/* 弹窗主体样式 */
+.nexus-dialog {
+  background: var(--card-bg, #1D1F4A) !important;
+  border: 1px solid var(--border-color, rgba(88, 94, 227, 0.3)) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 20px var(--active-bg, rgba(88, 94, 227, 0.2)) !important;
+}
+.nexus-dialog .el-dialog__header {
+  border-bottom: 1px solid var(--border-color, rgba(88, 94, 227, 0.3));
+  margin-right: 0; /* 覆盖 Element Plus 默认 margin */
+  padding: 16px 24px;
+}
+.nexus-dialog .el-dialog__title {
+  color: var(--text-primary, #f0f2f5);
+  font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 700;
+}
+.nexus-dialog .el-dialog__headerbtn .el-icon {
+  color: var(--text-primary, #f0f2f5);
+  font-size: 18px;
+}
+.nexus-dialog .el-dialog__body {
+  padding: 0;
+}
 
 /* --- Iframe 样式 --- */
 .preview-iframe { width: 100%; height: 100%; border-radius: 8px; }

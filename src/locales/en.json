@@ -98,7 +98,8 @@
     "noFindRelateHistory": "No related history found.",
     "viewDetail": "View details",
     "loadHistoryFail": "Loading history failed",
-    "unknowTime": "Unknown time"
+    "unknowTime": "Unknown time",
+    "clueSheet": "Memory Card"
   },
   "noteReview": {
     "loadNoteMsg": "Loading note content...",

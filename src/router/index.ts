@@ -20,6 +20,7 @@ const QuizReview = () => import('../views/QuizReview.vue');
 const NoteReview = () => import('../views/NoteReview.vue');
 const GraphReview = () => import('../views/GraphReview.vue');
 const ChatReview = () => import('../views/ChatReview.vue');
+const ClueSheetReview = () => import('../views/ClueSheetReview.vue');
 // 導入探索工具頁面組件
 const Tools = () => import('../views/Tools.vue');
 // 導入設置頁面組件
@@ -86,6 +87,11 @@ const routes = [
         path: 'chat-history/:id', // 动态路由，匹配 session_id
         name: 'ChatReview', 
         component: ChatReview 
+      },
+      { 
+        path: 'clue-sheets/:id', // 动态路由，匹配 clue_sheet_id
+        name: 'ClueSheetReview', 
+        component: ClueSheetReview 
       },
       { path: 'tools', 
         name: 'Tools', 

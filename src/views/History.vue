@@ -13,6 +13,7 @@
         <el-option :label="chatHistory" value="chat" />
         <el-option :label="graphHistory" value="graph" />
         <el-option :label="notesHistory" value="notes" />
+        <el-option :label="clueSheet" value="clue_sheet" />
       </el-select>
     </div>
 
@@ -52,7 +53,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElSelect, ElOption } from 'element-plus';
-import { Search, QuestionFilled, ChatDotRound, Share, Notebook } from '@element-plus/icons-vue';
+import { Search, QuestionFilled, ChatDotRound, Share, Notebook, Memo } from '@element-plus/icons-vue';
 import { getAllHistory, type HistoryEvent } from '../api/history';
 
 import { formatDistanceToNow } from 'date-fns';
@@ -76,6 +77,7 @@ const graphHistory = computed(() => t('history.graph_history'));
 const notesHistory = computed(() => t('history.notes_history'));
 const loadHistoryFail = computed(() => t('history.loadHistoryFail'));
 const unknowTime = computed(() => t('history.unknowTime'));
+const clueSheet = computed(() => t('history.clueSheet'));
 
 // --- 数据获取 ---
 onMounted(async () => {
@@ -109,6 +111,7 @@ const getIconForType = (type: HistoryEvent['type']) => {
     case 'chat': return ChatDotRound;
     case 'graph': return Share;
     case 'notes': return Notebook;
+    case 'clue_sheet': return Memo;
     default: return QuestionFilled;
   }
 };
@@ -160,6 +163,9 @@ const viewHistoryDetail = (event: HistoryEvent) => {
       break;
     case 'chat':
       router.push(`/chat-history/${event.id}`);
+      break;
+    case 'clue_sheet':
+      router.push(`/clue-sheets/${event.id}`);
       break;
     default:
       ElMessage.info(`查看 “${event.title}” 詳情的功能待開發。`);

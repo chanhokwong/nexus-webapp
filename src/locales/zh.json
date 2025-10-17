@@ -98,7 +98,8 @@
     "noFindRelateHistory": "沒有找到相關的歷史紀錄。",
     "viewDetail": "查看詳情",
     "loadHistoryFail": "加載歷史紀錄失敗",
-    "unknowTime": "未知時間"
+    "unknowTime": "未知時間",
+    "clueSheet": "記憶卡片"
   },
   "noteReview": {
     "loadNoteMsg": "正在加載筆記內容...",
@@ -240,7 +241,9 @@
     "notesStoreTitle": " - 學習筆記",
     "noteSavedMsg": "筆記已自動保存到歷史回顧",
     "ai_tutor_title": "AI導師",
-    "ai_tutor_desc": "與導師討論更深層次的問題"
+    "ai_tutor_desc": "與導師討論更深層次的問題",
+    "gen_clue_sheet_title": "記憶卡片生成",
+    "gen_clue_sheet_desc": "提取文本關鍵概念並組成卡片"
   },
   "workspaceList": {
     "myWorkspace": "我的工作台",

@@ -2,6 +2,7 @@ import { useUserStore } from '../stores/user';
 import { useLocaleStore } from '../stores/locale';
 import { longTimeoutApiClient } from './axios';
 // import apiClient, { longTimeoutApiClient } from './axios';
+import { saveClueSheet, type SaveClueSheetPayload } from './history';
 
 // --- [核心修正] 更新类型定义 ---
 // 我们不再需要 Node 和 Edge，只需要 Mermaid 响应类型
@@ -20,6 +21,16 @@ export interface QuizResponse {
     options: string[];
     answer: string;
   }[];
+}
+
+// [核心] 定义卡片和响应的类型
+export interface Flashcard {
+  title: string;
+  content: string;
+}
+export interface ClueSheetResponse {
+  title: string;
+  cards: Flashcard[];
 }
 
 export interface ChatMessage {
@@ -114,5 +125,31 @@ export const streamWorkspaceQuery = async (
     }
     const chunk = decoder.decode(value);
     onDelta(chunk); // 处理每一小块数据
+  }
+};
+
+/**
+ * [核心最终修正] 3.9 - 生成记忆卡片 (Clue Sheet)
+ */
+export const generateClueSheet = async (workspaceId: number | string): Promise<ClueSheetResponse> => {
+  const responseData = await longTimeoutApiClient.post<ClueSheetResponse>(`/workspaces/${workspaceId}/generate-clue-sheet`);
+  
+  if (responseData && responseData.cards && Array.isArray(responseData.cards)) {
+    // 自动保存
+    try {
+      const payload: SaveClueSheetPayload = {
+        title: responseData.title || `工作台 ${workspaceId} - 記憶卡片`,
+        cards: responseData.cards,
+        workspace_id: Number(workspaceId)
+      };
+      saveClueSheet(payload).then(saved => {
+        console.log("Clue sheet auto-saved with ID:", saved.id);
+        ElMessage.success({ message: '記憶卡片已自動保存', duration: 2000 });
+      });
+    } catch(e) { console.error("Auto-save clue sheet failed:", e); }
+
+    return responseData;
+  } else {
+    throw new Error("Invalid Clue Sheet response format.");
   }
 };

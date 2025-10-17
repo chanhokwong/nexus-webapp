@@ -1,11 +1,12 @@
 import apiClient from './axios';
 import { rawApiClient } from './axios'; // [核心] 导入 rawApiClient
 import type { ChatMessage } from './ai';
+import type { Flashcard } from './ai';
 
 // --- 类型定义 ---
 // 定义一个统一的历史事件类型
 export interface HistoryEvent {
-  type: 'quiz' | 'chat' | 'graph' | 'notes'; // 事件类型
+  type: 'quiz' | 'chat' | 'graph' | 'notes' | 'clue_sheet'; // 事件类型
   id: string; // session_id, graph_id, etc.
   title: string;
   context: string;
@@ -71,6 +72,27 @@ export interface SaveQuizPayload {
   attempts: QuizAttemptResult[]; // 包含所有题目的作答结果
 }
 
+interface ClueSheetHistoryItem { 
+  id: number; 
+  title: string; 
+  created_at: string; 
+}
+
+// [核心] 定义 Clue Sheet 详情的类型
+export interface ClueSheetDetail {
+  id: number;
+  title: string;
+  cards: Flashcard[];
+  created_at: string;
+}
+
+// [核心] 定义保存 Clue Sheet 时需要发送的数据
+export interface SaveClueSheetPayload {
+  title: string;
+  cards: Flashcard[];
+  // 假设后端也需要 workspace_id 来关联来源
+  workspace_id: number;
+}
 
 /**
  * [聚合] 获取并合并所有类型的历史记录
@@ -78,11 +100,12 @@ export interface SaveQuizPayload {
 export const getAllHistory = async (): Promise<HistoryEvent[]> => {
   const allEvents: HistoryEvent[] = [];
 
-  const [quizResult, chatResult, graphResult, noteResult] = await Promise.allSettled([
+  const [quizResult, chatResult, graphResult, noteResult, clueSheetResult] = await Promise.allSettled([
     rawApiClient.get<QuizHistorySession[]>('/quiz-history/sessions'), // << 确保这一行没有被删除或注释
     rawApiClient.get<ChatHistorySession[]>('/chat-history/sessions'),
     rawApiClient.get<GraphHistoryItem[]>('/knowledge-graphs/'),
     rawApiClient.get<NoteHistoryItem[]>('/notes/'),
+    rawApiClient.get<ClueSheetHistoryItem[]>('/clue-sheets/'),
   ]);
 
   // [核心最终修正] 在 .map() 之前添加 .filter() 来剔除所有无效数据
@@ -106,13 +129,13 @@ export const getAllHistory = async (): Promise<HistoryEvent[]> => {
   if (chatResult.status === 'fulfilled' && Array.isArray(chatResult.value.data)) {
     const data = chatResult.value.data;
     const chats: HistoryEvent[] = data
-      .filter(s => s && s.session_id) // << 过滤
+      .filter(s => s && s.session_id && s.created_at) // [核心] 确保 created_at 存在
       .map(s => ({
         type: 'chat', 
         id: s.session_id!,
         title: '與 AI 導師聊天',
         context: `主題: ${(s.first_message || '無主題').substring(0, 50)}...`, 
-        timestamp: s.created_at || new Date().toISOString()
+        timestamp: s.created_at! // [核心] 使用正确的字段
       }));
     allEvents.push(...chats);
   }
@@ -143,6 +166,22 @@ export const getAllHistory = async (): Promise<HistoryEvent[]> => {
         timestamp: n.created_at || new Date().toISOString()
       }));
     allEvents.push(...notes);
+  }
+
+  if (clueSheetResult.status === 'fulfilled' && Array.isArray(clueSheetResult.value.data)) {
+    const data = clueSheetResult.value.data;
+    const clueSheets: HistoryEvent[] = data
+      .filter(cs => cs && cs.id !== null)
+      .map(cs => ({
+        type: 'clue_sheet',
+        id: cs.id!.toString(),
+        title: '生成記憶卡片',
+        context: `標題: ${cs.title || '無標題'}`,
+        timestamp: cs.created_at || new Date().toISOString()
+      }));
+    allEvents.push(...clueSheets);
+  } else if(clueSheetResult.status === 'rejected') {
+     console.error("Failed to fetch clue sheet history:", clueSheetResult.reason);
   }
   
   allEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -176,4 +215,19 @@ export const saveQuizResult = (data: SaveQuizPayload): Promise<any> => {
  */
 export const getChatHistoryDetail = (sessionId: string): Promise<ChatMessage[]> => {
   return apiClient.get(`/chat-history/${sessionId}`);
+};
+
+/**
+ * [新增] 4.5 - 获取单个已保存 Clue Sheet 的完整内容
+ */
+export const getClueSheetById = (id: number | string): Promise<ClueSheetDetail> => {
+  return apiClient.get(`/clue-sheets/${id}`);
+};
+
+/**
+ * [新增] 4.5 - 保存一份 Clue Sheet
+ */
+export const saveClueSheet = (data: SaveClueSheetPayload): Promise<any> => {
+  // 根据 API 文档，端点是 /clue-sheets/save
+  return apiClient.post('/clue-sheets/save', data);
 };
