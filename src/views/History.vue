@@ -14,6 +14,7 @@
         <el-option :label="graphHistory" value="graph" />
         <el-option :label="notesHistory" value="notes" />
         <el-option :label="clueSheet" value="clue_sheet" />
+        <el-option :label="tutorialHistory" value="tutorial" />
       </el-select>
     </div>
 
@@ -53,7 +54,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElSelect, ElOption } from 'element-plus';
-import { Search, QuestionFilled, ChatDotRound, Share, Notebook, Memo } from '@element-plus/icons-vue';
+import { Search, QuestionFilled, ChatDotRound, Share, Notebook, Memo, School } from '@element-plus/icons-vue';
 import { getAllHistory, type HistoryEvent } from '../api/history';
 
 import { formatDistanceToNow } from 'date-fns';
@@ -78,6 +79,7 @@ const notesHistory = computed(() => t('history.notes_history'));
 const loadHistoryFail = computed(() => t('history.loadHistoryFail'));
 const unknowTime = computed(() => t('history.unknowTime'));
 const clueSheet = computed(() => t('history.clueSheet'));
+const tutorialHistory = computed(() => t('history.tutorialHistory'));
 
 // --- 数据获取 ---
 onMounted(async () => {
@@ -112,6 +114,7 @@ const getIconForType = (type: HistoryEvent['type']) => {
     case 'graph': return Share;
     case 'notes': return Notebook;
     case 'clue_sheet': return Memo;
+    case 'tutorial': return School; 
     default: return QuestionFilled;
   }
 };
@@ -143,6 +146,7 @@ const formatTimeAgo = (timestamp: string): string => {
     return timestamp; 
   }
 };
+
 // [核心] 添加“查看详情”的逻辑
 const viewHistoryDetail = (event: HistoryEvent) => {
   console.log("Viewing detail for:", event);
@@ -166,6 +170,9 @@ const viewHistoryDetail = (event: HistoryEvent) => {
       break;
     case 'clue_sheet':
       router.push(`/clue-sheets/${event.id}`);
+      break;
+    case 'tutorial':
+      router.push({ name: 'TutorialDetail', params: { tutorialId: event.id } }); 
       break;
     default:
       ElMessage.info(`查看 “${event.title}” 詳情的功能待開發。`);

@@ -152,7 +152,10 @@
             <div class="tool-title">{{ $t('workspaceDetail.ai_tutor_title') }}</div>
             <div class="tool-description">{{ $t('workspaceDetail.ai_tutor_desc') }}</div>
           </button>
-
+          <button class="ai-tool" :disabled="isAiLoading" @click="runAiTool('tutorial')">
+            <div class="tool-title">{{ $t('workspaceDetail.gen_tutorial_title') }}</div>
+            <div class="tool-description">{{ $t('workspaceDetail.gen_tutorial_desc') }}</div>
+          </button>
         </div>
       </div>
     </div>
@@ -255,7 +258,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 // [核心] 导入 ElDialog 和新的图标
 import { ElDialog, ElMessage, ElMessageBox } from 'element-plus';
 import { Plus, Close, Select, CircleCheck, Loading, FullScreen, UploadFilled, Upload, FolderAdd } from '@element-plus/icons-vue';
@@ -265,7 +268,7 @@ import { getWorkspaceById, addDocumentsToWorkspace, removeDocumentFromWorkspace,
 import { getAllUserDocuments, uploadDocument, type DocumentInfo } from '../api/documents';
 
 // [核心] 导入所有 AI 相关的 API 函数
-import { generateKnowledgeGraph, generateNotes, generateQuiz, generateClueSheet, type ClueSheetResponse, type QuizResponse, type KnowledgeGraphMermaidResponse } from '../api/ai';
+import { generateKnowledgeGraph, generateNotes, generateQuiz, generateClueSheet, type ClueSheetResponse, type QuizResponse, type KnowledgeGraphMermaidResponse, generateTutorialOutline } from '../api/ai';
 
 // [核心] 导入新的 API 函数和类型
 import { saveKnowledgeGraph, type SaveGraphPayload, saveClueSheet, type SaveClueSheetPayload } from '../api/history';
@@ -285,6 +288,7 @@ import { useI18n } from 'vue-i18n';
 
 // --- 基础状态 ---
 const route = useRoute();
+const router = useRouter();
 const workspace = ref<Workspace | null>(null);
 const isLoading = ref(true);
 const isPreviewLoading = ref(false);
@@ -361,6 +365,7 @@ const fileRemoveFail = computed(() => t('workspaceDetail.fileRemoveFail'));
 const notesStoreTitle = computed(() => t('workspaceDetail.notesStoreTitle'));
 const noteSavedMsg = computed(() => t('workspaceDetail.noteSavedMsg'));
 const clue_sheet = computed(() => t('workspaceDetail.gen_clue_sheet_title'));
+const tutorial = computed(() => t('workspaceDetail.gen_tutorial_title'));
 
 // --- 数据获取与刷新 ---
 
@@ -477,7 +482,7 @@ const handleUpload = async (options: any) => {
 };
 
 // --- [核心最终修正] AI 工具调用主函数 ---
-const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat' | 'clue_sheet') => {
+const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat' | 'clue_sheet' | 'tutorial') => {
   if (!workspace.value) return;
 
   // 路标 1: 函数开始
@@ -514,6 +519,7 @@ const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat' | 'clue_s
     case 'clue_sheet': toolName = clue_sheet.value; break;
   }
   
+  // @ts-ignore
   aiResultType.value = toolType; // 先设置类型，以便 UI 切换
   aiResult.value = null;
   previewContent.value = null;
@@ -634,6 +640,22 @@ const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat' | 'clue_s
 
         aiResult.value = clueSheetResponse; // clueSheetResponse 现在是正确的对象 { title, cards }
         break;
+
+       case 'tutorial':
+        toolName = tutorial.value;
+        // 1. 调用 API 生成大纲
+        const outlineResponse = await generateTutorialOutline(workspaceId);
+        
+        // 2. [关键] 获取到大纲后，跳转到新页面并携带数据
+        router.push({
+          name: 'TutorialView', // 我们将要创建的路由名称
+          params: { workspaceId: workspaceId },
+          // 将大纲数据暂存在路由 state 中，避免 URL 过长
+          // @ts-ignore
+          state: { outline: outlineResponse } 
+        });
+        // 注意：成功提示将由 TutorialView 页面自己处理，这里不需要
+        return; // 提前退出，不执行下面的通用成功提示
     }
     
     selectedDocumentId.value = null;

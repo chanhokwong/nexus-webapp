@@ -1,6 +1,6 @@
 import { useUserStore } from '../stores/user';
 import { useLocaleStore } from '../stores/locale';
-import { longTimeoutApiClient } from './axios';
+import apiClient, { longTimeoutApiClient } from './axios';
 // import apiClient, { longTimeoutApiClient } from './axios';
 import { saveClueSheet, type SaveClueSheetPayload } from './history';
 import { ElMessage } from 'element-plus';
@@ -47,6 +47,36 @@ export interface QueryResponse {
   answer: string;
   sources: Source[];
   session_id: string;
+}
+export interface TutorialStep {
+  step_number: number;
+  title: string;
+  content?: string | null; // content 是可选的，按需加载
+}
+export interface CurriculumOutlineResponse {
+  tutorial_title: string;
+  steps: TutorialStep[];
+}
+export interface GeneratedContentResponse {
+  content: string;
+  workspace_id: number;
+}
+// 用于 GET /tutorials/ 列表接口的响应
+export interface TutorialInfo {
+  id: number;
+  title: string;
+  created_at: string; // ISO DateTime string
+  workspace_id: number;
+}
+
+// 用于 GET /tutorials/{id} 详情接口的响应
+export interface TutorialDetail {
+  id: number;
+  title: string;
+  workspace_id: number;
+  owner_id: number;
+  created_at: string;
+  steps: TutorialStep[]; // TutorialStep 应该包含可选的 id, content, is_completed
 }
 
 // --- API 函数 ---
@@ -156,3 +186,60 @@ export const generateClueSheet = async (workspaceId: number | string): Promise<C
     throw new Error("Invalid Clue Sheet response format.");
   }
 };
+
+/**
+ * [新增] (Planner LLM) 为工作台生成课程大纲
+ */
+export const generateTutorialOutline = (workspaceId: number | string): Promise<CurriculumOutlineResponse> => {
+  // 生成大纲可能也需要较长时间
+  return longTimeoutApiClient.post(`/tutorials/generate-outline/workspace/${workspaceId}`);
+};
+
+/**
+ * [新增] (Tutor LLM) 为教程的某一步生成详细内容
+ */
+export const generateStepContent = (workspaceId: number | string, stepTitle: string): Promise<GeneratedContentResponse> => {
+  const encodedTitle = encodeURIComponent(stepTitle);
+  return longTimeoutApiClient.get(`/tutorials/generate-step-content/workspace/${workspaceId}/step/${encodedTitle}`);
+};
+
+/**
+ * [新增] 将生成的教程保存到数据库
+ */
+export const saveTutorial = (workspaceId: number | string, title: string, steps: TutorialStep[]): Promise<any> => {
+  const payload = {
+    workspace_id: Number(workspaceId),
+    title: title,
+    steps: steps.map(step => ({
+      step_number: step.step_number,
+      title: step.title,
+      content: step.content,
+    })),
+  };
+  return apiClient.post('/tutorials/save', payload);
+};
+
+/**
+ * 获取所有已保存的教程列表
+ */
+export async function getSavedTutorials(): Promise<TutorialInfo[]> {
+  const response = await apiClient.get<TutorialInfo[]>('/tutorials/');
+  return response.data;
+}
+
+/**
+ * 获取单个已保存教程的完整详情 (最终、简化版)
+ */
+export const getTutorialDetails = (tutorialId: number): Promise<TutorialDetail> => {
+  // **关键修复：保持与 generateKnowledgeGraph 等函数完全相同的实现风格**
+  // 我们依赖 apiClient 的全局拦截器来处理 data 的解包和错误
+  console.log(`--- [API] Fetching details for Tutorial ID: ${tutorialId} ---`);
+  return apiClient.get(`/tutorials/${tutorialId}`);
+};
+
+/**
+ * 按需获取或生成单个已保存步骤的内容，并将其持久化
+ */
+export async function getOrGenerateStepContent(stepId: number): Promise<TutorialStep> {
+  return apiClient.put(`/tutorials/step/${stepId}/content`);
+}

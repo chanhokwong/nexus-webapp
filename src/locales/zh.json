@@ -99,7 +99,8 @@
     "viewDetail": "查看詳情",
     "loadHistoryFail": "加載歷史紀錄失敗",
     "unknowTime": "未知時間",
-    "clueSheet": "記憶卡片"
+    "clueSheet": "記憶卡片",
+    "tutorialHistory": "教程歷史"
   },
   "noteReview": {
     "loadNoteMsg": "正在加載筆記內容...",
@@ -243,7 +244,9 @@
     "ai_tutor_title": "AI導師",
     "ai_tutor_desc": "與導師討論更深層次的問題",
     "gen_clue_sheet_title": "記憶卡片生成",
-    "gen_clue_sheet_desc": "提取文本關鍵概念並組成卡片"
+    "gen_clue_sheet_desc": "提取文本關鍵概念並組成卡片",
+    "gen_tutorial_title": "教程生成",
+    "gen_tutorial_desc": "把宏觀知識拆細為多個部分並逐個掌握"
   },
   "workspaceList": {
     "myWorkspace": "我的工作台",

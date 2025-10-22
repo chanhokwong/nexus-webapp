@@ -99,7 +99,8 @@
     "viewDetail": "View details",
     "loadHistoryFail": "Loading history failed",
     "unknowTime": "Unknown time",
-    "clueSheet": "Memory Card"
+    "clueSheet": "Memory Card",
+    "tutorialHistory": "Tutorial History"
   },
   "noteReview": {
     "loadNoteMsg": "Loading note content...",
@@ -241,7 +242,11 @@
     "notesStoreTitle": " - Study Notes",
     "noteSavedMsg": "Notes have been automatically saved to the history review.",
     "ai_tutor_title": "AI Tutor",
-    "ai_tutor_desc": "Discuss more advanced learning questions with the tutor."
+    "ai_tutor_desc": "Discuss more advanced learning questions with the tutor.",
+    "gen_clue_sheet_title": "Generate Memory Cards",
+    "gen_clue_sheet_desc": "Extract key concepts from the text and organize them into cards",
+    "gen_tutorial_title": "Generate Tutorials",
+    "gen_tutorial_desc": "Break down macro-level knowledge into multiple components and master each one."
   },
   "workspaceList": {
     "myWorkspace": "My Workspace",

@@ -6,7 +6,7 @@ import type { Flashcard } from './ai';
 // --- 类型定义 ---
 // 定义一个统一的历史事件类型
 export interface HistoryEvent {
-  type: 'quiz' | 'chat' | 'graph' | 'notes' | 'clue_sheet'; // 事件类型
+  type: 'quiz' | 'chat' | 'graph' | 'notes' | 'clue_sheet' | 'tutorial'; // 事件类型
   id: string; // session_id, graph_id, etc.
   title: string;
   context: string;
@@ -94,18 +94,44 @@ export interface SaveClueSheetPayload {
   workspace_id: number;
 }
 
+// 新增：用于解析 GET /tutorials/ 响应的接口
+interface TutorialHistoryItem { 
+  id: number; 
+  title: string; 
+  created_at: string; 
+  workspace_id: number; // 后端也返回了这个，我们可以利用它
+}
+
+export interface TutorialStepDetail {
+  id: number;
+  step_number: number;
+  title: string;
+  content: string | null;
+  is_completed: boolean;
+}
+
+export interface TutorialDetail {
+  id: number;
+  title: string;
+  workspace_id: number;
+  owner_id: number;
+  created_at: string;
+  steps: TutorialStepDetail[];
+}
+
 /**
  * [聚合] 获取并合并所有类型的历史记录
  */
 export const getAllHistory = async (): Promise<HistoryEvent[]> => {
   const allEvents: HistoryEvent[] = [];
 
-  const [quizResult, chatResult, graphResult, noteResult, clueSheetResult] = await Promise.allSettled([
+  const [quizResult, chatResult, graphResult, noteResult, clueSheetResult, tutorialResult] = await Promise.allSettled([
     rawApiClient.get<QuizHistorySession[]>('/quiz-history/sessions'), // << 确保这一行没有被删除或注释
     rawApiClient.get<ChatHistorySession[]>('/chat-history/sessions'),
     rawApiClient.get<GraphHistoryItem[]>('/knowledge-graphs/'),
     rawApiClient.get<NoteHistoryItem[]>('/notes/'),
     rawApiClient.get<ClueSheetHistoryItem[]>('/clue-sheets/'),
+    rawApiClient.get<TutorialHistoryItem[]>('/tutorials/'),
   ]);
 
   // [核心最终修正] 在 .map() 之前添加 .filter() 来剔除所有无效数据
@@ -183,6 +209,22 @@ export const getAllHistory = async (): Promise<HistoryEvent[]> => {
   } else if(clueSheetResult.status === 'rejected') {
      console.error("Failed to fetch clue sheet history:", clueSheetResult.reason);
   }
+
+  if (tutorialResult.status === 'fulfilled' && Array.isArray(tutorialResult.value.data)) {
+    const data = tutorialResult.value.data;
+    const tutorials: HistoryEvent[] = data
+      .filter(t => t && t.id != null) // 过滤掉无效数据
+      .map(t => ({
+        type: 'tutorial', // <-- 定义新的类型
+        id: t.id!.toString(),
+        title: '生成學習教程', // 或者使用 t.title
+        context: `教程標題: ${t.title || '無標題'}`, 
+        timestamp: t.created_at || new Date().toISOString()
+      }));
+    allEvents.push(...tutorials);
+  } else if (tutorialResult.status === 'rejected') {
+     console.error("Failed to fetch tutorial history:", tutorialResult.reason);
+  }
   
   allEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   
@@ -230,4 +272,14 @@ export const getClueSheetById = (id: number | string): Promise<ClueSheetDetail> 
 export const saveClueSheet = (data: SaveClueSheetPayload): Promise<any> => {
   // 根据 API 文档，端点是 /clue-sheets/save
   return apiClient.post('/clue-sheets/save', data);
+};
+
+/**
+ * 获取单个已保存教程的完整详情 (最终、简化版)
+ */
+export const getTutorialDetails = (tutorialId: number): Promise<TutorialDetail> => {
+  // **关键修复：保持与 getGraphById 等函数完全相同的实现风格**
+  // 我们依赖 apiClient 的全局拦截器来处理 data 的解包和错误
+  console.log(`--- [API] Fetching details for Tutorial ID: ${tutorialId} ---`);
+  return apiClient.get(`/tutorials/${tutorialId}`);
 };

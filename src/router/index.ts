@@ -21,6 +21,7 @@ const NoteReview = () => import('../views/NoteReview.vue');
 const GraphReview = () => import('../views/GraphReview.vue');
 const ChatReview = () => import('../views/ChatReview.vue');
 const ClueSheetReview = () => import('../views/ClueSheetReview.vue');
+const TutorialView = () => import('../views/TutorialView.vue');
 // 導入探索工具頁面組件
 const Tools = () => import('../views/Tools.vue');
 // 導入設置頁面組件
@@ -92,6 +93,26 @@ const routes = [
         path: 'clue-sheets/:id', // 动态路由，匹配 clue_sheet_id
         name: 'ClueSheetReview', 
         component: ClueSheetReview 
+      },
+      {
+        path: 'workspaces/:workspaceId/tutorial', // 使用 workspaceId 动态路由
+        name: 'TutorialView',
+        component: TutorialView,
+        props: true // 允许将路径参数 :workspaceId 作为 props 传入组件
+      },
+      {
+        // 我们合并两个路径，通过 props 来区分
+        path: '/workspace/:workspaceId/tutorial/:tutorialId?', // tutorialId 设为可选
+        name: 'TutorialView',
+        component: () => import('../views/TutorialView.vue'),
+        props: true 
+      },
+      // **方案B (更清晰): 为历史回顾创建一个专门的路由**
+      {
+        path: '/tutorials/:tutorialId', // 新的路径
+        name: 'TutorialDetail',        // 新的、专门的名字
+        component: () => import('../views/TutorialView.vue'),
+        props: true // **关键：将路径参数 :tutorialId 映射为组件的 props**
       },
       { path: 'tools', 
         name: 'Tools', 
