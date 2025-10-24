@@ -79,6 +79,24 @@ export interface TutorialDetail {
   steps: TutorialStep[]; // TutorialStep 应该包含可选的 id, content, is_completed
 }
 
+// [核心] 新增短答题相关的类型定义
+export interface ShortAnswerQuestionResponse {
+  question: string;
+  session_id: string;
+}
+
+export interface GradeAnswerRequest {
+  session_id: string;
+  question: string;
+  user_answer: string;
+}
+
+export interface GradedAnswerResponse {
+  score: number;
+  feedback: string; // Markdown
+  standard_answer: string; // Markdown
+}
+
 // --- API 函数 ---
 
 /**
@@ -243,3 +261,17 @@ export const getTutorialDetails = (tutorialId: number): Promise<TutorialDetail> 
 export async function getOrGenerateStepContent(stepId: number): Promise<TutorialStep> {
   return apiClient.put(`/tutorials/step/${stepId}/content`);
 }
+
+/**
+ * [新增] (出题官) 为工作台生成一道短答题
+ */
+export const generateShortQuestion = (workspaceId: number | string): Promise<ShortAnswerQuestionResponse> => {
+  return longTimeoutApiClient.post(`/workspaces/${workspaceId}/generate-short-question`);
+};
+
+/**
+ * [新增] (批改官) 批改用户的短答题答案
+ */
+export const gradeShortAnswer = (workspaceId: number | string, data: GradeAnswerRequest): Promise<GradedAnswerResponse> => {
+  return longTimeoutApiClient.post(`/workspaces/${workspaceId}/grade-short-answer`, data);
+};

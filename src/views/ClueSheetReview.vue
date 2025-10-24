@@ -64,6 +64,10 @@ onUnmounted(() => {
 
 <style scoped>
 /* 样式与 NoteReview.vue / GraphReview.vue 完全一致 */
+.loading-state, .empty-state {
+  display: flex; justify-content: center; align-items: center;
+  height: 100%; color: var(--text-secondary);
+}
 
 .clue-sheet-review-container {
   width: 100%;

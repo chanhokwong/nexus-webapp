@@ -156,6 +156,10 @@
             <div class="tool-title">{{ $t('workspaceDetail.gen_tutorial_title') }}</div>
             <div class="tool-description">{{ $t('workspaceDetail.gen_tutorial_desc') }}</div>
           </button>
+          <button class="ai-tool" :disabled="isAiLoading" @click="runAiTool('short_quiz')">
+            <div class="tool-title">{{ $t('workspaceDetail.gen_short_quiz_title') }}</div>
+            <div class="tool-description">{{ $t('workspaceDetail.gen_short_quiz_desc') }}</div>
+          </button>
         </div>
       </div>
     </div>
@@ -268,7 +272,7 @@ import { getWorkspaceById, addDocumentsToWorkspace, removeDocumentFromWorkspace,
 import { getAllUserDocuments, uploadDocument, type DocumentInfo } from '../api/documents';
 
 // [核心] 导入所有 AI 相关的 API 函数
-import { generateKnowledgeGraph, generateNotes, generateQuiz, generateClueSheet, type ClueSheetResponse, type QuizResponse, type KnowledgeGraphMermaidResponse, generateTutorialOutline } from '../api/ai';
+import { generateKnowledgeGraph, generateNotes, generateQuiz, generateClueSheet, type ClueSheetResponse, type QuizResponse, type KnowledgeGraphMermaidResponse, generateTutorialOutline, generateShortQuestion } from '../api/ai';
 
 // [核心] 导入新的 API 函数和类型
 import { saveKnowledgeGraph, type SaveGraphPayload, saveClueSheet, type SaveClueSheetPayload } from '../api/history';
@@ -304,7 +308,7 @@ const selectedDocIds = ref<number[]>([]); // 存储在弹窗中选择的文档ID
 const isAiLoading = ref(false); // 控制AI工具的加载状态
 
 // [核心] 新增 ref 来存储 AI 结果
-const aiResultType = ref<'quiz' | 'notes' | 'graph' | 'chat' | 'clue_sheet' | null>(null);
+const aiResultType = ref<'quiz' | 'notes' | 'graph' | 'chat' | 'clue_sheet' | 'short_quiz' | null>(null);
 const aiResult = ref<any | null>(null); // 用于存储原始的 AI 结果对象
 
 // 添加全屏状态
@@ -482,7 +486,7 @@ const handleUpload = async (options: any) => {
 };
 
 // --- [核心最终修正] AI 工具调用主函数 ---
-const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat' | 'clue_sheet' | 'tutorial') => {
+const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat' | 'clue_sheet' | 'tutorial' | 'short_quiz') => {
   if (!workspace.value) return;
 
   // 路标 1: 函数开始
@@ -641,7 +645,7 @@ const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat' | 'clue_s
         aiResult.value = clueSheetResponse; // clueSheetResponse 现在是正确的对象 { title, cards }
         break;
 
-       case 'tutorial':
+      case 'tutorial':
         toolName = tutorial.value;
         // 1. 调用 API 生成大纲
         const outlineResponse = await generateTutorialOutline(workspaceId);
@@ -656,6 +660,18 @@ const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat' | 'clue_s
         });
         // 注意：成功提示将由 TutorialView 页面自己处理，这里不需要
         return; // 提前退出，不执行下面的通用成功提示
+
+      case 'short_quiz':
+        toolName = t('workspace.gen_short_quiz_title');
+        // 1. 调用 API 生成题目
+        const response = await generateShortQuestion(workspaceId);
+        // 2. 成功后，跳转到新页面并携带数据
+        router.push({
+          name: 'ShortAnswerQuiz',
+          params: { workspaceId: workspaceId },
+          state: { question: response.question, sessionId: response.session_id } 
+        });
+        return; // 提前返回
     }
     
     selectedDocumentId.value = null;
@@ -771,7 +787,7 @@ const handleRemoveDocument = (doc: DocumentInfo) => {
 .workspace-detail-container { height: 100%; display: flex; flex-direction: column; }
 .page-header { margin-bottom: 20px; }
 .page-title { font-size: 36px; font-weight: 700; }
-.page-description { font-size: 16px; color: var(--text-secondary); margin-top: 8px; font-style: italic; margin-bottom: 30px; }
+.page-description { font-size: 16px; color: var(--text-secondary); margin-top: 8px; font-style: italic; margin-bottom: 20px; }
 
 .collaboration-canvas {
     flex-grow: 1; display: grid;

@@ -22,6 +22,8 @@ const GraphReview = () => import('../views/GraphReview.vue');
 const ChatReview = () => import('../views/ChatReview.vue');
 const ClueSheetReview = () => import('../views/ClueSheetReview.vue');
 const TutorialView = () => import('../views/TutorialView.vue');
+const ShortAnswerQuiz = () => import('../views/ShortAnswerQuiz.vue');
+const ShortAnswerReview = () => import('../views/ShortAnswerReview.vue');
 // 導入探索工具頁面組件
 const Tools = () => import('../views/Tools.vue');
 // 導入設置頁面組件
@@ -113,6 +115,17 @@ const routes = [
         name: 'TutorialDetail',        // 新的、专门的名字
         component: () => import('../views/TutorialView.vue'),
         props: true // **关键：将路径参数 :tutorialId 映射为组件的 props**
+      },
+      {
+        path: 'workspaces/:workspaceId/short-quiz',
+        name: 'ShortAnswerQuiz',
+        component: ShortAnswerQuiz,
+        props: true,
+      },
+      { 
+        path: 'short-answer-history/:id', // 新路由
+        name: 'ShortAnswerReview', 
+        component: ShortAnswerReview 
       },
       { path: 'tools', 
         name: 'Tools', 

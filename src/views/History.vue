@@ -15,6 +15,7 @@
         <el-option :label="notesHistory" value="notes" />
         <el-option :label="clueSheet" value="clue_sheet" />
         <el-option :label="tutorialHistory" value="tutorial" />
+        <el-option :label="shortQuestionHistory" value="short_answer" />
       </el-select>
     </div>
 
@@ -54,7 +55,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElSelect, ElOption } from 'element-plus';
-import { Search, QuestionFilled, ChatDotRound, Share, Notebook, Memo, School } from '@element-plus/icons-vue';
+import { Search, QuestionFilled, ChatDotRound, Share, Notebook, Memo, School, EditPen } from '@element-plus/icons-vue';
 import { getAllHistory, type HistoryEvent } from '../api/history';
 
 import { formatDistanceToNow } from 'date-fns';
@@ -80,6 +81,7 @@ const loadHistoryFail = computed(() => t('history.loadHistoryFail'));
 const unknowTime = computed(() => t('history.unknowTime'));
 const clueSheet = computed(() => t('history.clueSheet'));
 const tutorialHistory = computed(() => t('history.tutorialHistory'));
+const shortQuestionHistory = computed(() => t('history.shortQuestionHistory'));
 
 // --- 数据获取 ---
 onMounted(async () => {
@@ -115,6 +117,7 @@ const getIconForType = (type: HistoryEvent['type']) => {
     case 'notes': return Notebook;
     case 'clue_sheet': return Memo;
     case 'tutorial': return School; 
+    case 'short_answer': return EditPen;
     default: return QuestionFilled;
   }
 };
@@ -173,6 +176,9 @@ const viewHistoryDetail = (event: HistoryEvent) => {
       break;
     case 'tutorial':
       router.push({ name: 'TutorialDetail', params: { tutorialId: event.id } }); 
+      break;
+    case 'short_answer':
+      router.push(`/short-answer-history/${event.id}`);
       break;
     default:
       ElMessage.info(`查看 “${event.title}” 詳情的功能待開發。`);

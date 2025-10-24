@@ -6,7 +6,7 @@ import type { Flashcard } from './ai';
 // --- 类型定义 ---
 // 定义一个统一的历史事件类型
 export interface HistoryEvent {
-  type: 'quiz' | 'chat' | 'graph' | 'notes' | 'clue_sheet' | 'tutorial'; // 事件类型
+  type: 'quiz' | 'chat' | 'graph' | 'notes' | 'clue_sheet' | 'tutorial' | 'short_answer'; // 事件类型
   id: string; // session_id, graph_id, etc.
   title: string;
   context: string;
@@ -22,7 +22,7 @@ interface QuizHistorySession {
 interface ChatHistorySession { 
   session_id: string; 
   first_message: string; 
-  created_at: string; 
+  started_at: string; 
 }
 interface GraphHistoryItem { 
   id: number; 
@@ -119,19 +119,54 @@ export interface TutorialDetail {
   steps: TutorialStepDetail[];
 }
 
+// --- [核心] Short Answer 相关的类型定义 (与后端 V2 Schema 完全匹配) ---
+export interface SaveShortAnswerPayload {
+  session_id: string;
+  workspace_id: number;
+  question: string;
+  user_answer: string;
+  score: number;
+  feedback: string;
+  standard_answer: string;
+}
+
+export interface ShortAnswerRecord {
+  question: string;
+  user_answer: string;
+  score: number;
+  feedback: string;
+  standard_answer: string;
+}
+
+export interface ShortAnswerDetail {
+  session_id: string;
+  workspace_name: string;
+  created_at: string;
+  records: ShortAnswerRecord[];
+}
+
+interface ShortAnswerSessionInfo {
+  session_id: string;
+  workspace_name: string;
+  created_at: string;
+  record_count: number;
+}
+
+
 /**
  * [聚合] 获取并合并所有类型的历史记录
  */
 export const getAllHistory = async (): Promise<HistoryEvent[]> => {
   const allEvents: HistoryEvent[] = [];
 
-  const [quizResult, chatResult, graphResult, noteResult, clueSheetResult, tutorialResult] = await Promise.allSettled([
+  const [quizResult, chatResult, graphResult, noteResult, clueSheetResult, tutorialResult, shortAnswerResult] = await Promise.allSettled([
     rawApiClient.get<QuizHistorySession[]>('/quiz-history/sessions'), // << 确保这一行没有被删除或注释
     rawApiClient.get<ChatHistorySession[]>('/chat-history/sessions'),
     rawApiClient.get<GraphHistoryItem[]>('/knowledge-graphs/'),
     rawApiClient.get<NoteHistoryItem[]>('/notes/'),
     rawApiClient.get<ClueSheetHistoryItem[]>('/clue-sheets/'),
     rawApiClient.get<TutorialHistoryItem[]>('/tutorials/'),
+    rawApiClient.get<ShortAnswerSessionInfo[]>('/short-answer-history/sessions'),
   ]);
 
   // [核心最终修正] 在 .map() 之前添加 .filter() 来剔除所有无效数据
@@ -155,13 +190,13 @@ export const getAllHistory = async (): Promise<HistoryEvent[]> => {
   if (chatResult.status === 'fulfilled' && Array.isArray(chatResult.value.data)) {
     const data = chatResult.value.data;
     const chats: HistoryEvent[] = data
-      .filter(s => s && s.session_id && s.created_at) // [核心] 确保 created_at 存在
+      .filter(s => s && s.session_id) // << 过滤
       .map(s => ({
         type: 'chat', 
         id: s.session_id!,
         title: '與 AI 導師聊天',
         context: `主題: ${(s.first_message || '無主題').substring(0, 50)}...`, 
-        timestamp: s.created_at! // [核心] 使用正确的字段
+        timestamp: s.started_at || new Date().toISOString()
       }));
     allEvents.push(...chats);
   }
@@ -225,6 +260,21 @@ export const getAllHistory = async (): Promise<HistoryEvent[]> => {
   } else if (tutorialResult.status === 'rejected') {
      console.error("Failed to fetch tutorial history:", tutorialResult.reason);
   }
+
+  // [核心] 更新处理短答题历史的逻辑
+  if (shortAnswerResult.status === 'fulfilled' && Array.isArray(shortAnswerResult.value.data)) {
+    const data = shortAnswerResult.value.data;
+    const shortAnswers: HistoryEvent[] = data.map(s => ({
+      type: 'short_answer', // type 保持不变
+      id: s.session_id,
+      title: '短答題練習',
+      context: `源自工作台: ${s.workspace_name} (${s.record_count} 題)`, // 显示题目数量
+      timestamp: s.created_at
+    }));
+    allEvents.push(...shortAnswers);
+  } else if (shortAnswerResult.status === 'rejected') {
+     console.error("Failed to fetch short answer history:", shortAnswerResult.reason);
+  }
   
   allEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   
@@ -282,4 +332,19 @@ export const getTutorialDetails = (tutorialId: number): Promise<TutorialDetail> 
   // 我们依赖 apiClient 的全局拦截器来处理 data 的解包和错误
   console.log(`--- [API] Fetching details for Tutorial ID: ${tutorialId} ---`);
   return apiClient.get(`/tutorials/${tutorialId}`);
+};
+
+/**
+ * [核心] 保存一次完整的短答题作答记录
+ */
+export const saveShortAnswerRecord = (data: SaveShortAnswerPayload): Promise<any> => {
+  return apiClient.post('/short-answer-history/save-record', data);
+};
+
+
+/**
+ * [核心] 获取单个短答题会话的完整记录
+ */
+export const getShortAnswerHistoryById = (sessionId: string): Promise<ShortAnswerDetail> => {
+  return apiClient.get(`/short-answer-history/${sessionId}`);
 };

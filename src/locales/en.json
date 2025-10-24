@@ -100,7 +100,8 @@
     "loadHistoryFail": "Loading history failed",
     "unknowTime": "Unknown time",
     "clueSheet": "Memory Card",
-    "tutorialHistory": "Tutorial History"
+    "tutorialHistory": "Tutorial History",
+    "shortQuestionHistory": "Short questions"
   },
   "noteReview": {
     "loadNoteMsg": "Loading note content...",
@@ -246,7 +247,9 @@
     "gen_clue_sheet_title": "Generate Memory Cards",
     "gen_clue_sheet_desc": "Extract key concepts from the text and organize them into cards",
     "gen_tutorial_title": "Generate Tutorials",
-    "gen_tutorial_desc": "Break down macro-level knowledge into multiple components and master each one."
+    "gen_tutorial_desc": "Break down macro-level knowledge into multiple components and master each one.",
+    "gen_short_quiz_title": "Short Answer Quiz Generation",
+    "gen_short_quiz_desc": "Test your understanding of concepts and questions"
   },
   "workspaceList": {
     "myWorkspace": "My Workspace",
