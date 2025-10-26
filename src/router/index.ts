@@ -24,6 +24,7 @@ const ClueSheetReview = () => import('../views/ClueSheetReview.vue');
 const TutorialView = () => import('../views/TutorialView.vue');
 const ShortAnswerQuiz = () => import('../views/ShortAnswerQuiz.vue');
 const ShortAnswerReview = () => import('../views/ShortAnswerReview.vue');
+const LongAnswerReview = () => import('../views/LongAnswerReview.vue');
 // 導入探索工具頁面組件
 const Tools = () => import('../views/Tools.vue');
 // 導入設置頁面組件
@@ -126,6 +127,11 @@ const routes = [
         path: 'short-answer-history/:id', // 新路由
         name: 'ShortAnswerReview', 
         component: ShortAnswerReview 
+      },
+      { 
+        path: 'long-answer-history/:id', // 新路由
+        name: 'LongAnswerReview', 
+        component: LongAnswerReview 
       },
       { path: 'tools', 
         name: 'Tools', 

@@ -97,6 +97,35 @@ export interface GradedAnswerResponse {
   standard_answer: string; // Markdown
 }
 
+// [核心] 新增长答题相关的类型定义
+export interface LongAnswerQuestionResponse {
+  question: string;
+  session_id: string;
+}
+
+export interface GradeLongAnswerRequest {
+  session_id: string;
+  question: string;
+  user_answer: string;
+}
+
+// [核心] 新增 MarkingSchemeItem 类型
+export interface MarkingSchemeItem {
+  criterion: string;
+  score: number;
+  max_score: number;
+  comment: string;
+}
+
+export interface GradedLongAnswerResponse {
+  overall_score: number;
+  feedback: string;
+  standard_answer: string;
+  marking_scheme: MarkingSchemeItem[];
+}
+
+
+
 // --- API 函数 ---
 
 /**
@@ -274,4 +303,18 @@ export const generateShortQuestion = (workspaceId: number | string): Promise<Sho
  */
 export const gradeShortAnswer = (workspaceId: number | string, data: GradeAnswerRequest): Promise<GradedAnswerResponse> => {
   return longTimeoutApiClient.post(`/workspaces/${workspaceId}/grade-short-answer`, data);
+};
+
+/**
+ * [新增] (出题官) 为工作台生成一道长答题
+ */
+export const generateLongQuestion = (workspaceId: number | string): Promise<LongAnswerQuestionResponse> => {
+  return longTimeoutApiClient.post(`/workspaces/${workspaceId}/generate-long-question`);
+};
+
+/**
+ * [新增] (批改官) 批改用户的长答题答案
+ */
+export const gradeLongAnswer = (workspaceId: number | string, data: GradeLongAnswerRequest): Promise<GradedLongAnswerResponse> => {
+  return longTimeoutApiClient.post(`/workspaces/${workspaceId}/grade-long-answer`, data);
 };

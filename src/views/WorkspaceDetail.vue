@@ -107,6 +107,10 @@
             <FlashcardViewer :cards="aiResult.cards" />
           </div>
 
+          <div v-else-if="aiResultType === 'long_quiz'" class="view-wrapper scrollable">
+            <LongAnswerPlayer v-if="workspace" :workspace-id="workspace.id" />
+          </div>
+
           <div v-else-if="previewContent" class="view-wrapper scrollable">
             <div class="content-text">{{ previewContent }}</div>
           </div>
@@ -120,7 +124,7 @@
       </div>
 
       <!-- 第三栏：智能工具箱 -->
-      <div class="canvas-panel">
+      <div class="canvas-panel ai-toolbox">
         <div class="panel-header">
           <h2 class="panel-title">{{ $t('workspaceDetail.smartControl') }}</h2>
           <!-- [新增] 加载指示器 -->
@@ -159,6 +163,10 @@
           <button class="ai-tool" :disabled="isAiLoading" @click="runAiTool('short_quiz')">
             <div class="tool-title">{{ $t('workspaceDetail.gen_short_quiz_title') }}</div>
             <div class="tool-description">{{ $t('workspaceDetail.gen_short_quiz_desc') }}</div>
+          </button>
+          <button class="ai-tool" :disabled="isAiLoading" @click="runAiTool('long_quiz')">
+            <div class="tool-title">{{ $t('workspaceDetail.gen_long_quiz_title') }}</div>
+            <div class="tool-description">{{ $t('workspaceDetail.gen_long_quiz_desc') }}</div>
           </button>
         </div>
       </div>
@@ -286,6 +294,7 @@ import MarkdownRenderer from '../components/MarkdownRenderer.vue';
 import KnowledgeGraphRenderer from '../components/KnowledgeGraphRenderer.vue';
 import AiTutorChat from '../components/AiTutorChat.vue';
 import FlashcardViewer from '../components/FlashcardViewer.vue';
+import LongAnswerPlayer from '../components/LongAnswerPlayer.vue';
 
 import { useI18n } from 'vue-i18n';
 
@@ -308,7 +317,7 @@ const selectedDocIds = ref<number[]>([]); // 存储在弹窗中选择的文档ID
 const isAiLoading = ref(false); // 控制AI工具的加载状态
 
 // [核心] 新增 ref 来存储 AI 结果
-const aiResultType = ref<'quiz' | 'notes' | 'graph' | 'chat' | 'clue_sheet' | 'short_quiz' | null>(null);
+const aiResultType = ref<'quiz' | 'notes' | 'graph' | 'chat' | 'clue_sheet' | 'short_quiz' | 'long_quiz' | null>(null);
 const aiResult = ref<any | null>(null); // 用于存储原始的 AI 结果对象
 
 // 添加全屏状态
@@ -486,7 +495,7 @@ const handleUpload = async (options: any) => {
 };
 
 // --- [核心最终修正] AI 工具调用主函数 ---
-const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat' | 'clue_sheet' | 'tutorial' | 'short_quiz') => {
+const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat' | 'clue_sheet' | 'tutorial' | 'short_quiz' | 'long_quiz') => {
   if (!workspace.value) return;
 
   // 路标 1: 函数开始
@@ -501,14 +510,13 @@ const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat' | 'clue_s
   // 路标 2: 工作台检查通过
   console.log(`[DEBUG] 2. Workspace check passed. Workspace ID: ${workspace.value.id}`);
 
-  if (toolType === 'chat') {
-    // 对于“聊天”这种交互式工具，我们只切换视图
-    aiResultType.value = 'chat';
-    aiResult.value = null; // 确保其他结果被清空
+  if (toolType === 'chat' || toolType === 'long_quiz') {
+    aiResultType.value = toolType;
+    aiResult.value = null;
     previewContent.value = null;
-    selectedDocumentId.value = null; // 清除文件选择
-    console.log("[DEBUG] Switched to AI Tutor chat view.");
-    return; // 直接退出，不执行后续的 API 调用
+    selectedDocumentId.value = null;
+    console.log(`[DEBUG] Switched to interactive tool view: ${toolType}`);
+    return; // 直接退出，不执行下面的 API 调用逻辑
   }
 
   isAiLoading.value = true;
@@ -672,6 +680,15 @@ const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat' | 'clue_s
           state: { question: response.question, sessionId: response.session_id } 
         });
         return; // 提前返回
+      // @ts-ignore
+      case 'long_quiz':
+        // [核心] 长答题是交互式工具，我们只切换视图，不在此处调用 API
+        // 逻辑与 'chat' 完全一致
+        toolName = t('workspace.gen_long_quiz_title');
+        // aiResultType 已经在函数开头被设置，这里无需重复
+        console.log(`[DEBUG] Switched to Long Answer Quiz view.`);
+        // [关键] 移除所有 API 调用和 router.push，然后直接返回
+        return;
     }
     
     selectedDocumentId.value = null;
@@ -855,7 +872,8 @@ const handleRemoveDocument = (doc: DocumentInfo) => {
 .content-text { width: 100%; white-space: pre-wrap; }
 
 /* --- 智能工具箱 --- */
-.ai-toolbox-list { display: flex; flex-direction: column; gap: 16px; }
+.ai-toolbox { overflow-y: auto; }
+.ai-toolbox-list { display: flex; flex-direction: column; gap: 16px; position: fixed; top: 70px; }
 .ai-tool { padding: 16px; border-radius: 8px; border: 1px solid var(--border-color); background-color: transparent; color: var(--text-primary); text-align: left; cursor: pointer; transition: all 0.3s; font-family: inherit; }
 .ai-tool:hover:not(:disabled) { border-color: var(--active-glow); background-color: var(--active-bg); }
 .tool-title { font-size: 16px; font-weight: 700; }

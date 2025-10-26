@@ -110,7 +110,7 @@ onMounted(() => {
 // [核心最终修正] 改造 submitAnswer 函数
 const submitAnswer = async () => {
   if (!currentSessionId.value) {
-    ElMessage.error("会话 ID 丢失，无法提交。");
+    ElMessage.error("會話 ID 丢失，無法提交。");
     return;
   }
   isLoading.value = true;

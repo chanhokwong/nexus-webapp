@@ -16,7 +16,7 @@
         <span class="value">{{ historyData.workspace_name }}</span>
       </div>
       <div class="summary-item">
-        <span class="label">练习时间</span>
+        <span class="label">練習時間</span>
         <span class="value">{{ new Date(historyData.created_at).toLocaleString() }}</span>
       </div>
     </div>

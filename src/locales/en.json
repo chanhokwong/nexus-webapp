@@ -101,7 +101,8 @@
     "unknowTime": "Unknown time",
     "clueSheet": "Memory Card",
     "tutorialHistory": "Tutorial History",
-    "shortQuestionHistory": "Short questions"
+    "shortQuestionHistory": "Short questions",
+    "longQuestionHistory": "Long questions"
   },
   "noteReview": {
     "loadNoteMsg": "Loading note content...",
@@ -249,7 +250,9 @@
     "gen_tutorial_title": "Generate Tutorials",
     "gen_tutorial_desc": "Break down macro-level knowledge into multiple components and master each one.",
     "gen_short_quiz_title": "Short Answer Quiz Generation",
-    "gen_short_quiz_desc": "Test your understanding of concepts and questions"
+    "gen_short_quiz_desc": "Test your understanding of concepts and questions",
+    "gen_long_quiz_title": "Long Quiz Generation",
+    "gen_long_quiz_desc": "Practice breaking down long questions and answering them."
   },
   "workspaceList": {
     "myWorkspace": "My Workspace",

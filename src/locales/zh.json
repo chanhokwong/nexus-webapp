@@ -101,7 +101,8 @@
     "unknowTime": "未知時間",
     "clueSheet": "記憶卡片",
     "tutorialHistory": "教程歷史",
-    "shortQuestionHistory": "短答題"
+    "shortQuestionHistory": "短答題",
+    "longQuestionHistory": "長答題"
   },
   "noteReview": {
     "loadNoteMsg": "正在加載筆記內容...",
@@ -249,7 +250,9 @@
     "gen_tutorial_title": "教程生成",
     "gen_tutorial_desc": "把宏觀知識拆細為多個部分並逐個掌握",
     "gen_short_quiz_title": "短答題生成",
-    "gen_short_quiz_desc": "測試你對概念和問題的掌握"
+    "gen_short_quiz_desc": "測試你對概念和問題的掌握",
+    "gen_long_quiz_title": "長題目生成",
+    "gen_long_quiz_desc": "練習拆解長題目並進行回答"
   },
   "workspaceList": {
     "myWorkspace": "我的工作台",

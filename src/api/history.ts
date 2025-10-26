@@ -2,6 +2,7 @@ import apiClient from './axios';
 import { rawApiClient } from './axios'; // [核心] 导入 rawApiClient
 import type { ChatMessage } from './ai';
 import type { Flashcard } from './ai';
+import type { GradedLongAnswerResponse } from './ai';
 
 // --- 类型定义 ---
 // 定义一个统一的历史事件类型
@@ -152,6 +153,27 @@ interface ShortAnswerSessionInfo {
   record_count: number;
 }
 
+// [核心] 新增长答题历史相关的类型定义
+interface LongAnswerSessionInfo {
+  session_id: string;
+  workspace_name: string;
+  created_at: string;
+  record_count: number;
+}
+
+export interface LongAnswerRecordDetail {
+  question: string;
+  user_answer: string;
+  grading_result: GradedLongAnswerResponse; // 嵌套完整的批改结果
+}
+
+export interface LongAnswerDetail {
+  session_id: string;
+  workspace_name: string;
+  created_at: string;
+  records: LongAnswerRecordDetail[];
+}
+
 
 /**
  * [聚合] 获取并合并所有类型的历史记录
@@ -159,7 +181,7 @@ interface ShortAnswerSessionInfo {
 export const getAllHistory = async (): Promise<HistoryEvent[]> => {
   const allEvents: HistoryEvent[] = [];
 
-  const [quizResult, chatResult, graphResult, noteResult, clueSheetResult, tutorialResult, shortAnswerResult] = await Promise.allSettled([
+  const [quizResult, chatResult, graphResult, noteResult, clueSheetResult, tutorialResult, shortAnswerResult, longAnswerResult] = await Promise.allSettled([
     rawApiClient.get<QuizHistorySession[]>('/quiz-history/sessions'), // << 确保这一行没有被删除或注释
     rawApiClient.get<ChatHistorySession[]>('/chat-history/sessions'),
     rawApiClient.get<GraphHistoryItem[]>('/knowledge-graphs/'),
@@ -167,6 +189,7 @@ export const getAllHistory = async (): Promise<HistoryEvent[]> => {
     rawApiClient.get<ClueSheetHistoryItem[]>('/clue-sheets/'),
     rawApiClient.get<TutorialHistoryItem[]>('/tutorials/'),
     rawApiClient.get<ShortAnswerSessionInfo[]>('/short-answer-history/sessions'),
+    rawApiClient.get<LongAnswerSessionInfo[]>('/long-answer-history/sessions'),
   ]);
 
   // [核心最终修正] 在 .map() 之前添加 .filter() 来剔除所有无效数据
@@ -275,6 +298,21 @@ export const getAllHistory = async (): Promise<HistoryEvent[]> => {
   } else if (shortAnswerResult.status === 'rejected') {
      console.error("Failed to fetch short answer history:", shortAnswerResult.reason);
   }
+
+  if (longAnswerResult.status === 'fulfilled' && Array.isArray(longAnswerResult.value.data)) {
+    const data = longAnswerResult.value.data;
+    // @ts-ignore
+    const longAnswers: HistoryEvent[] = data.map(s => ({
+      type: 'long_answer', // 定义新的类型
+      id: s.session_id,
+      title: '長答題練習',
+      context: `源自工作台: ${s.workspace_name} (${s.record_count} 題)`,
+      timestamp: s.created_at
+    }));
+    allEvents.push(...longAnswers);
+  } else if (longAnswerResult.status === 'rejected') {
+     console.error("Failed to fetch long answer history:", longAnswerResult.reason);
+  }
   
   allEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   
@@ -341,10 +379,16 @@ export const saveShortAnswerRecord = (data: SaveShortAnswerPayload): Promise<any
   return apiClient.post('/short-answer-history/save-record', data);
 };
 
-
 /**
  * [核心] 获取单个短答题会话的完整记录
  */
 export const getShortAnswerHistoryById = (sessionId: string): Promise<ShortAnswerDetail> => {
   return apiClient.get(`/short-answer-history/${sessionId}`);
+};
+
+/**
+ * [新增] 获取单个长答题会话的完整记录
+ */
+export const getLongAnswerHistoryById = (sessionId: string): Promise<LongAnswerDetail> => {
+  return apiClient.get(`/long-answer-history/${sessionId}`);
 };
