@@ -1,66 +1,52 @@
 <template>
-  <div class="short-quiz-container">
-    <header class="page-header">
-      <h1 class="page-title">引導式短答題</h1>
-      <button class="btn-back" @click="$router.back()">
-        <el-icon><ArrowLeft /></el-icon>
-        <span>返回工作台</span>
+  <div class="short-quiz-player">
+    <div v-if="isLoading" class="loading-state">
+      <div class="spinner"></div>
+      <span>{{ loadingText }}</span>
+    </div>
+
+    <!-- 答题阶段 -->
+    <div v-else-if="!gradedResult && currentQuestion" class="answering-phase">
+      <div class="question-area">
+        <p class="question-label">題目:</p>
+        <p class="question-text">{{ currentQuestion }}</p>
+      </div>
+      <textarea
+        v-model="userAnswer"
+        class="answer-textarea"
+        placeholder="在此输入你的答案..."
+        rows="8"
+      ></textarea>
+      <button class="btn-submit" @click="submitAnswer" :disabled="!userAnswer.trim()">
+        提交批改
       </button>
-    </header>
+    </div>
 
-    <div class="quiz-panel" ref="scrollContainerRef" @scroll="updateScrollButtons">
-      <!-- 加载状态 -->
-      <div v-if="isLoading" class="loading-state">
-        <div class="spinner"></div>
-        <span>{{ loadingText }}</span>
+    <!-- 结果展示阶段 -->
+    <div v-else-if="gradedResult" class="results-phase">
+      <div class="result-card score-card">
+        <div class="score-label">你的得分</div>
+        <div class="score-value">{{ gradedResult.score }}</div>
       </div>
-      
-      <!-- 答题阶段 -->
-      <div v-else-if="!gradedResult" class="answering-phase">
-        <div class="question-area">
-          <p class="question-label">題目：</p>
-          <p class="question-text">{{ currentQuestion }}</p>
-        </div>
-        <textarea
-          v-model="userAnswer"
-          class="answer-textarea"
-          placeholder="在此輸入你的答案..."
-          :disabled="isLoading"
-          rows="8"
-        ></textarea>
-        <button class="btn-submit" @click="submitAnswer" :disabled="isLoading || !userAnswer.trim()">
-          {{ isLoading ? '批改中...' : '提交批改' }}
-        </button>
+      <div class="result-card">
+        <h3>你的答案</h3>
+        <p>{{ userAnswer }}</p>
       </div>
-
-      <!-- 结果展示阶段 -->
-      <div v-else class="results-phase">
-        <div class="result-card score-card">
-          <div class="score-label">你的得分</div>
-          <div class="score-value">{{ gradedResult.score }}</div>
-        </div>
-        <div class="result-card">
-          <h3>你的答案</h3>
-          <p>{{ userAnswer }}</p>
-        </div>
-        <div class="result-card">
-          <h3>AI 評價</h3>
-          <MarkdownRenderer :markdown="gradedResult.feedback" />
-        </div>
-        <div class="result-card">
-          <h3>參考答案</h3>
-          <MarkdownRenderer :markdown="gradedResult.standard_answer" />
-        </div>
-        <div class="result-actions">
-          <button class="btn-submit retry-btn" @click="retryCurrentQuestion">
-            再次回答此題
-          </button>
-          <button class="btn-submit next-btn" @click="getNextQuestion" :disabled="isLoading">
-            {{ isLoading ? '出題中...' : '下一題' }}
-          </button>
-        </div>
+      <div class="result-card">
+        <h3>AI 評價</h3>
+        <MarkdownRenderer :markdown="gradedResult.feedback" />
+      </div>
+      <div class="result-card">
+        <h3>參考答案</h3>
+        <MarkdownRenderer :markdown="gradedResult.standard_answer" />
+      </div>
+      <div class="result-actions">
+        <button class="btn-submit retry-btn" @click="retryCurrentQuestion">再次回答此題</button>
+        <button class="btn-submit next-btn" @click="getNextQuestion">下一題</button>
       </div>
     </div>
+    
+    <div v-else class="empty-state">未能加載題目，請重試。</div>
   </div>
 </template>
 
@@ -69,93 +55,55 @@ import { ref, onMounted, nextTick } from 'vue';
 import { ElMessage } from 'element-plus';
 import { generateShortQuestion, gradeShortAnswer, type GradedAnswerResponse, type GradeAnswerRequest } from '../api/ai';
 import { saveShortAnswerRecord, type SaveShortAnswerPayload } from '../api/history';
-import MarkdownRenderer from '../components/MarkdownRenderer.vue';
-import { ArrowLeft } from '@element-plus/icons-vue';
+import MarkdownRenderer from './MarkdownRenderer.vue';
 
-const props = defineProps<{ workspaceId: string }>();
+const props = defineProps<{
+  workspaceId: number;
+  initialQuestion: string;
+  initialSessionId: string;
+}>();
 
 const isLoading = ref(false);
 const loadingText = ref('');
 const currentQuestion = ref('');
 const userAnswer = ref('');
 const gradedResult = ref<GradedAnswerResponse | null>(null);
-
-const scrollContainerRef = ref<HTMLElement | null>(null);
-const canScroll = ref(false);
-const canScrollUp = ref(false);
-const canScrollDown = ref(false);
-
-const currentSessionId = ref<string | null>(null);
-
-let resizeObserver: ResizeObserver | null = null;
+const currentSessionId = ref('');
 
 onMounted(() => {
-  const initialQuestion = window.history.state.question as string | undefined;
-  const initialSessionId = window.history.state.sessionId as string | undefined;
-
-  if (initialQuestion && initialSessionId) {
-    currentQuestion.value = initialQuestion;
-    currentSessionId.value = initialSessionId;
-  } else {
-    // 如果直接刷新页面，重新获取一题
-    getNextQuestion();
-  }
-  if (scrollContainerRef.value) {
-    resizeObserver = new ResizeObserver(updateScrollButtons);
-    resizeObserver.observe(scrollContainerRef.value);
-    nextTick(updateScrollButtons); // 初始检查
-  }
+  // 从 props 初始化第一道题
+  currentQuestion.value = props.initialQuestion;
+  currentSessionId.value = props.initialSessionId;
 });
 
-// [核心最终修正] 改造 submitAnswer 函数
 const submitAnswer = async () => {
-  if (!currentSessionId.value) {
-    ElMessage.error("會話 ID 丢失，無法提交。");
-    return;
-  }
   isLoading.value = true;
   loadingText.value = '批改中...';
-  
   try {
-    // 1. 获取批改结果
     const gradePayload: GradeAnswerRequest = {
       session_id: currentSessionId.value,
       question: currentQuestion.value,
       user_answer: userAnswer.value,
     };
     const result = await gradeShortAnswer(props.workspaceId, gradePayload);
-    
-    // 2. [关键] 批改成功后，立即构建保存的 payload
+    gradedResult.value = result;
+
+    // 自动保存
     const savePayload: SaveShortAnswerPayload = {
       session_id: currentSessionId.value,
-      workspace_id: Number(props.workspaceId),
+      workspace_id: props.workspaceId,
       question: currentQuestion.value,
       user_answer: userAnswer.value,
       score: result.score,
       feedback: result.feedback,
       standard_answer: result.standard_answer,
     };
-    
-    // 3. [关键] 在后台“发射后不管”地调用保存 API
     saveShortAnswerRecord(savePayload)
-      .then(() => {
-        console.log("Short answer record saved successfully.");
-        ElMessage.success({ message: "答題記錄已自動保存", duration: 2000 });
-      })
-      .catch(err => {
-        console.error("Failed to auto-save short answer record:", err);
-        // 这是一个非致命错误，只在控制台提示
-      });
-
-    // 4. 更新 UI 以显示批改结果
-    gradedResult.value = result;
-
-  } catch (error) { 
-    ElMessage.error("批改失敗，請重試。"); 
-    console.error(error);
-  } finally { 
-    isLoading.value = false; 
-  }
+      .then(() => { ElMessage.success({ message: "答題記錄已自動保存", duration: 2000 }); })
+      .catch(err => { console.error("Failed to auto-save record:", err); });
+      
+  } catch (error) { ElMessage.error("批改失敗，請重試。"); } 
+  finally { isLoading.value = false; }
 };
 
 const getNextQuestion = async () => {
@@ -167,7 +115,7 @@ const getNextQuestion = async () => {
     const response = await generateShortQuestion(props.workspaceId);
     currentQuestion.value = response.question;
     currentSessionId.value = response.session_id;
-  } catch (error) { ElMessage.error("获取新题目失败，请重试。"); }
+  } catch (error) { ElMessage.error("獲取新題目失敗，請重試。"); }
   finally { isLoading.value = false; }
 };
 
@@ -177,28 +125,14 @@ const retryCurrentQuestion = () => {
   gradedResult.value = null; // 重置结果状态，返回答题界面
   userAnswer.value = '';     // 清空之前的答案
   // currentQuestion 保持不变
-  nextTick(updateScrollButtons);
 };
 
-// --- 滚动逻辑 ---
-function updateScrollButtons() {
-  const el = scrollContainerRef.value;
-  if (!el) return;
-  const hasScrollbar = el.scrollHeight > el.clientHeight;
-  canScroll.value = hasScrollbar;
-  if (hasScrollbar) {
-    canScrollUp.value = el.scrollTop > 0;
-    canScrollDown.value = el.scrollTop + el.clientHeight < el.scrollHeight - 1;
-  } else {
-    canScrollUp.value = false;
-    canScrollDown.value = false;
-  }
-}
 
 </script>
 
 <style scoped>
 /* --- 整体布局 (复用 NoteReview 的成功模式) --- */
+
 .short-quiz-container {
   position: fixed;
   /* 
@@ -380,4 +314,27 @@ function updateScrollButtons() {
   background: var(--active-bg);
   box-shadow: none;
 }
+
+/* --- 加载与空状态 --- */
+.loading-state, .empty-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  height: 100%;
+  color: var(--text-secondary);
+  position: fixed;
+  top: 20px;
+  left: 340px;
+}
+.spinner {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid rgba(88, 94, 227, 0.3);
+  border-top-color: var(--active-glow);
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>

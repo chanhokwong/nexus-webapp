@@ -124,7 +124,38 @@ export interface GradedLongAnswerResponse {
   marking_scheme: MarkingSchemeItem[];
 }
 
+// [新增] 模擬卷相關的類型定義
+export interface ExamQuestion {
+  id: string;
+  type: 'multiple_choice' | 'short_answer' | 'fill_in_the_blank';
+  question_text: string;
+  options?: string[];
+  points: number;
+}
 
+export interface ExamPaperResponse {
+  exam_session_id: number;
+  title: string;
+  questions: ExamQuestion[];
+}
+
+export interface GradeExamRequest {
+  user_answers: Record<string, any>;
+}
+
+export interface GradedQuestionReport {
+  id: string;
+  user_answer: any;
+  standard_answer: string;
+  feedback: string;
+  score: number;
+}
+
+export interface GradedExamReport {
+  overall_score: number;
+  overall_feedback: string;
+  graded_questions: GradedQuestionReport[];
+}
 
 // --- API 函数 ---
 
@@ -317,4 +348,20 @@ export const generateLongQuestion = (workspaceId: number | string): Promise<Long
  */
 export const gradeLongAnswer = (workspaceId: number | string, data: GradeLongAnswerRequest): Promise<GradedLongAnswerResponse> => {
   return longTimeoutApiClient.post(`/workspaces/${workspaceId}/grade-long-answer`, data);
+};
+
+/**
+ * [新增] (出題官) 為工作台生成一份模擬試卷
+ */
+export const generateExamPaper = (workspaceId: number | string): Promise<ExamPaperResponse> => {
+  // 假設生成試卷也可能耗時較長，使用 longTimeoutApiClient
+  return longTimeoutApiClient.post(`/exams/generate/workspace/${workspaceId}`);
+};
+
+/**
+ * [新增] (批改官) 批改用戶的完整模擬答卷
+ */
+export const gradeExamPaper = (examSessionId: number, data: GradeExamRequest): Promise<GradedExamReport> => {
+  // 批改可能更耗時
+  return longTimeoutApiClient.post(`/exams/session/${examSessionId}/grade`, data);
 };

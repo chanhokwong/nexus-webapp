@@ -3,11 +3,12 @@ import { rawApiClient } from './axios'; // [核心] 导入 rawApiClient
 import type { ChatMessage } from './ai';
 import type { Flashcard } from './ai';
 import type { GradedLongAnswerResponse } from './ai';
+import type { ExamQuestion } from './ai';
 
 // --- 类型定义 ---
 // 定义一个统一的历史事件类型
 export interface HistoryEvent {
-  type: 'quiz' | 'chat' | 'graph' | 'notes' | 'clue_sheet' | 'tutorial' | 'short_answer'; // 事件类型
+  type: 'quiz' | 'chat' | 'graph' | 'notes' | 'clue_sheet' | 'tutorial' | 'short_answer' | 'exam'; // 事件类型
   id: string; // session_id, graph_id, etc.
   title: string;
   context: string;
@@ -174,6 +175,39 @@ export interface LongAnswerDetail {
   records: LongAnswerRecordDetail[];
 }
 
+// [新增] 模擬卷歷史列表項的類型 (來自後端 API)
+interface ExamSessionInfo {
+  id: number;
+  title: string;
+  workspace_name: string;
+  created_at: string;
+  overall_score?: number;
+}
+
+// [新增] 模擬卷歷史詳情的類型 (來自後端 API)
+export interface ExamSessionDetail {
+  id: number;
+  title: string;
+  workspace_name: string;
+  created_at: string;
+  paper_content: {
+    title: string;
+    questions: ExamQuestion[];
+  };
+  user_answers?: Record<string, any>;
+  grading_report?: {
+    overall_score: number;
+    overall_feedback: string;
+    graded_questions: Array<{
+      id: string;
+      user_answer: any;
+      standard_answer: string;
+      feedback: string;
+      score: number;
+    }>;
+  };
+  overall_score?: number;
+}
 
 /**
  * [聚合] 获取并合并所有类型的历史记录
@@ -181,7 +215,7 @@ export interface LongAnswerDetail {
 export const getAllHistory = async (): Promise<HistoryEvent[]> => {
   const allEvents: HistoryEvent[] = [];
 
-  const [quizResult, chatResult, graphResult, noteResult, clueSheetResult, tutorialResult, shortAnswerResult, longAnswerResult] = await Promise.allSettled([
+  const [quizResult, chatResult, graphResult, noteResult, clueSheetResult, tutorialResult, shortAnswerResult, longAnswerResult, examResult] = await Promise.allSettled([
     rawApiClient.get<QuizHistorySession[]>('/quiz-history/sessions'), // << 确保这一行没有被删除或注释
     rawApiClient.get<ChatHistorySession[]>('/chat-history/sessions'),
     rawApiClient.get<GraphHistoryItem[]>('/knowledge-graphs/'),
@@ -190,6 +224,7 @@ export const getAllHistory = async (): Promise<HistoryEvent[]> => {
     rawApiClient.get<TutorialHistoryItem[]>('/tutorials/'),
     rawApiClient.get<ShortAnswerSessionInfo[]>('/short-answer-history/sessions'),
     rawApiClient.get<LongAnswerSessionInfo[]>('/long-answer-history/sessions'),
+    rawApiClient.get<ExamSessionInfo[]>('/exams/sessions'),
   ]);
 
   // [核心最终修正] 在 .map() 之前添加 .filter() 来剔除所有无效数据
@@ -313,6 +348,21 @@ export const getAllHistory = async (): Promise<HistoryEvent[]> => {
   } else if (longAnswerResult.status === 'rejected') {
      console.error("Failed to fetch long answer history:", longAnswerResult.reason);
   }
+
+  if (examResult.status === 'fulfilled' && Array.isArray(examResult.value.data)) {
+    const data = examResult.value.data;
+    const exams: HistoryEvent[] = data.map(s => ({
+      type: 'exam', // 定義新的類型
+      id: s.id.toString(), // 確保 id 是 string
+      title: s.title,
+      description: `源自工作台: ${s.workspace_name}`, // 更新 description 字段
+      timestamp: s.created_at,
+      icon: 'fas fa-file-signature' // (稍後在 History.vue 中定義具體圖標)
+    }));
+    allEvents.push(...exams);
+  } else if (examResult.status === 'rejected') {
+     console.error("Failed to fetch exam history:", examResult.reason);
+  }
   
   allEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   
@@ -391,4 +441,11 @@ export const getShortAnswerHistoryById = (sessionId: string): Promise<ShortAnswe
  */
 export const getLongAnswerHistoryById = (sessionId: string): Promise<LongAnswerDetail> => {
   return apiClient.get(`/long-answer-history/${sessionId}`);
+};
+
+/**
+ * [新增] 根據 Session ID 獲取單個模擬卷的完整詳情
+ */
+export const getExamSessionById = (sessionId: string | number): Promise<ExamSessionDetail> => {
+  return apiClient.get(`/exams/session/${sessionId}`);
 };

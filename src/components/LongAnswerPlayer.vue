@@ -58,6 +58,9 @@
         </div>
         <!-- 底部操作按钮 -->
         <div class="result-actions">
+          <button class="btn-submit retry-btn" @click="retryCurrentQuestion">
+            再次回答此題
+          </button>
           <button class="btn-submit next-btn" @click="getNextQuestion" :disabled="isLoading">
             {{ isLoading ? '出題中...' : '下一題' }}
           </button>
@@ -160,6 +163,13 @@ const getNextQuestion = async () => {
   } finally { 
     isLoading.value = false; 
   }
+};
+
+// [核心] 新增“重答此题”的函数
+const retryCurrentQuestion = () => {
+  gradedResult.value = null; // 重置结果状态，返回答题界面
+  userAnswer.value = '';     // 清空之前的答案
+  // currentQuestion 和 currentSessionId 保持不变
 };
 </script>
 
@@ -299,10 +309,21 @@ const getNextQuestion = async () => {
 }
 
 .result-actions {
-  grid-column: 1 / -1; /* 让按钮组也占据整行 */
+  grid-column: 1 / -1; /* 让按钮组横跨两栏 */
   display: flex;
   justify-content: center;
-  margin-top: 20px;
+  gap: 20px;
+  padding-top: 20px;
+}
+.btn-submit.retry-btn {
+  /* “重答”按钮使用次要样式 */
+  background: transparent;
+  border: 1px solid var(--active-glow);
+  color: var(--active-glow);
+}
+.btn-submit.retry-btn:hover:not(:disabled) {
+  background: var(--active-bg);
+  box-shadow: none; /* 移除主要按钮的辉光效果 */
 }
 .next-btn {
   align-self: center; /* 按钮居中 */

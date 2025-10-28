@@ -107,8 +107,16 @@
             <FlashcardViewer :cards="aiResult.cards" />
           </div>
 
+          <div v-else-if="aiResultType === 'short_quiz' && aiResult" class="view-wrapper scrollable">
+            <ShortAnswerPlayer :workspace-id="workspace.id" :initial-question="aiResult.question" :initial-session-id="aiResult.session_id" />
+          </div>
+
           <div v-else-if="aiResultType === 'long_quiz'" class="view-wrapper scrollable">
             <LongAnswerPlayer v-if="workspace" :workspace-id="workspace.id" />
+          </div>
+
+          <div v-else-if="aiResultType === 'exam' && aiResult" class="view-wrapper scrollable">
+            <ExamPlayer :exam-data="aiResult" />
           </div>
 
           <div v-else-if="previewContent" class="view-wrapper scrollable">
@@ -167,6 +175,11 @@
           <button class="ai-tool" :disabled="isAiLoading" @click="runAiTool('long_quiz')">
             <div class="tool-title">{{ $t('workspaceDetail.gen_long_quiz_title') }}</div>
             <div class="tool-description">{{ $t('workspaceDetail.gen_long_quiz_desc') }}</div>
+          </button>
+          <button class="ai-tool" :disabled="isAiLoading" @click="runAiTool('exam')">
+            <div class="tool-icon"><i class="fas fa-file-alt"></i></div>
+            <div class="tool-title">{{ $t('workspaceDetail.gen_exam_title') }}</div>
+            <div class="tool-description">{{ $t('workspaceDetail.gen_exam_desc') }}</div>
           </button>
         </div>
       </div>
@@ -280,7 +293,7 @@ import { getWorkspaceById, addDocumentsToWorkspace, removeDocumentFromWorkspace,
 import { getAllUserDocuments, uploadDocument, type DocumentInfo } from '../api/documents';
 
 // [核心] 导入所有 AI 相关的 API 函数
-import { generateKnowledgeGraph, generateNotes, generateQuiz, generateClueSheet, type ClueSheetResponse, type QuizResponse, type KnowledgeGraphMermaidResponse, generateTutorialOutline, generateShortQuestion } from '../api/ai';
+import { generateKnowledgeGraph, generateNotes, generateQuiz, generateClueSheet, type ClueSheetResponse, type QuizResponse, type KnowledgeGraphMermaidResponse, generateTutorialOutline, generateShortQuestion, generateExamPaper } from '../api/ai';
 
 // [核心] 导入新的 API 函数和类型
 import { saveKnowledgeGraph, type SaveGraphPayload, saveClueSheet, type SaveClueSheetPayload } from '../api/history';
@@ -294,9 +307,12 @@ import MarkdownRenderer from '../components/MarkdownRenderer.vue';
 import KnowledgeGraphRenderer from '../components/KnowledgeGraphRenderer.vue';
 import AiTutorChat from '../components/AiTutorChat.vue';
 import FlashcardViewer from '../components/FlashcardViewer.vue';
+import ShortAnswerPlayer from '../components/ShortAnswerPlayer.vue';
 import LongAnswerPlayer from '../components/LongAnswerPlayer.vue';
+import ExamPlayer from '../components/ExamPlayer.vue';
 
 import { useI18n } from 'vue-i18n';
+import { ca } from 'date-fns/locale';
 
 
 // --- 基础状态 ---
@@ -317,7 +333,7 @@ const selectedDocIds = ref<number[]>([]); // 存储在弹窗中选择的文档ID
 const isAiLoading = ref(false); // 控制AI工具的加载状态
 
 // [核心] 新增 ref 来存储 AI 结果
-const aiResultType = ref<'quiz' | 'notes' | 'graph' | 'chat' | 'clue_sheet' | 'short_quiz' | 'long_quiz' | null>(null);
+const aiResultType = ref<'quiz' | 'notes' | 'graph' | 'chat' | 'clue_sheet' | 'short_quiz' | 'long_quiz' | 'exam' |null>(null);
 const aiResult = ref<any | null>(null); // 用于存储原始的 AI 结果对象
 
 // 添加全屏状态
@@ -379,6 +395,10 @@ const notesStoreTitle = computed(() => t('workspaceDetail.notesStoreTitle'));
 const noteSavedMsg = computed(() => t('workspaceDetail.noteSavedMsg'));
 const clue_sheet = computed(() => t('workspaceDetail.gen_clue_sheet_title'));
 const tutorial = computed(() => t('workspaceDetail.gen_tutorial_title'));
+const gen_short_quiz_title = computed(() => t('workspaceDetail.gen_short_quiz_title'));
+const gen_long_quiz_title = computed(() => t('workspaceDetail.gen_long_quiz_title'));
+const gen_exam_title = computed(() => t('workspaceDetail.gen_exam_title'));
+
 
 // --- 数据获取与刷新 ---
 
@@ -495,7 +515,7 @@ const handleUpload = async (options: any) => {
 };
 
 // --- [核心最终修正] AI 工具调用主函数 ---
-const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat' | 'clue_sheet' | 'tutorial' | 'short_quiz' | 'long_quiz') => {
+const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat' | 'clue_sheet' | 'tutorial' | 'short_quiz' | 'long_quiz' | 'exam') => {
   if (!workspace.value) return;
 
   // 路标 1: 函数开始
@@ -529,6 +549,12 @@ const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat' | 'clue_s
     case 'notes': toolName = notes.value; break;
     case 'quiz': toolName = quiz.value; break;
     case 'clue_sheet': toolName = clue_sheet.value; break;
+    case 'tutorial': toolName = tutorial.value; break;
+    case 'short_quiz': toolName = gen_short_quiz_title.value; break;
+    // @ts-ignore
+    case 'long_quiz': toolName = gen_long_quiz_title.value; break;
+    case 'exam': toolName = gen_exam_title.value; break;
+    default: toolName = 'AI Tool'; break;
   }
   
   // @ts-ignore
@@ -670,25 +696,30 @@ const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat' | 'clue_s
         return; // 提前退出，不执行下面的通用成功提示
 
       case 'short_quiz':
-        toolName = t('workspace.gen_short_quiz_title');
-        // 1. 调用 API 生成题目
+        toolName = gen_short_quiz_title.value;
+        // 1. 调用 API 获取第一道题
         const response = await generateShortQuestion(workspaceId);
-        // 2. 成功后，跳转到新页面并携带数据
-        router.push({
-          name: 'ShortAnswerQuiz',
-          params: { workspaceId: workspaceId },
-          state: { question: response.question, sessionId: response.session_id } 
-        });
-        return; // 提前返回
+        // 2. 将返回的数据存入 aiResult
+        aiResult.value = response;
+        // 3. aiResultType 已经被设置为 'short_quiz'，Vue 会自动渲染新组件
+        break;
+
       // @ts-ignore
       case 'long_quiz':
         // [核心] 长答题是交互式工具，我们只切换视图，不在此处调用 API
         // 逻辑与 'chat' 完全一致
-        toolName = t('workspace.gen_long_quiz_title');
+        toolName = gen_long_quiz_title.value;
         // aiResultType 已经在函数开头被设置，这里无需重复
         console.log(`[DEBUG] Switched to Long Answer Quiz view.`);
         // [关键] 移除所有 API 调用和 router.push，然后直接返回
         return;
+
+      case 'exam':
+        toolName = gen_exam_title.value; // 確保 i18n key 正確
+        const examResponse = await generateExamPaper(workspaceId);
+        aiResult.value = examResponse; // 將包含試卷數據的完整對象存入 aiResult
+        // aiResultType 已在 switch 之前設置，Vue 會自動渲染新元件
+        break;
     }
     
     selectedDocumentId.value = null;

@@ -22,9 +22,9 @@ const GraphReview = () => import('../views/GraphReview.vue');
 const ChatReview = () => import('../views/ChatReview.vue');
 const ClueSheetReview = () => import('../views/ClueSheetReview.vue');
 const TutorialView = () => import('../views/TutorialView.vue');
-const ShortAnswerQuiz = () => import('../views/ShortAnswerQuiz.vue');
 const ShortAnswerReview = () => import('../views/ShortAnswerReview.vue');
 const LongAnswerReview = () => import('../views/LongAnswerReview.vue');
+const ExamReview = () => import('../views/ExamReview.vue');
 // 導入探索工具頁面組件
 const Tools = () => import('../views/Tools.vue');
 // 導入設置頁面組件
@@ -117,12 +117,6 @@ const routes = [
         component: () => import('../views/TutorialView.vue'),
         props: true // **关键：将路径参数 :tutorialId 映射为组件的 props**
       },
-      {
-        path: 'workspaces/:workspaceId/short-quiz',
-        name: 'ShortAnswerQuiz',
-        component: ShortAnswerQuiz,
-        props: true,
-      },
       { 
         path: 'short-answer-history/:id', // 新路由
         name: 'ShortAnswerReview', 
@@ -132,6 +126,11 @@ const routes = [
         path: 'long-answer-history/:id', // 新路由
         name: 'LongAnswerReview', 
         component: LongAnswerReview 
+      },
+      { 
+        path: '/exam-history/:id', // [新增] 新的扁平化路由
+        name: 'ExamReview', 
+        component: ExamReview 
       },
       { path: 'tools', 
         name: 'Tools', 

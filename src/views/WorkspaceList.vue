@@ -11,7 +11,7 @@
 
     <!-- [核心] 骨架屏加載狀態 -->
     <div v-if="isLoading" class="workspace-grid skeleton-grid">
-      <div v-for="i in 4" :key="i" class="workspace-card skeleton-card">
+      <div v-for="i in 12" :key="i" class="workspace-card skeleton-card">
         <div class="skeleton-line title"></div>
         <div class="skeleton-line text"></div>
         <div class="skeleton-line text short"></div>
