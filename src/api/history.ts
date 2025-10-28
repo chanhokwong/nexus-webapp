@@ -351,6 +351,7 @@ export const getAllHistory = async (): Promise<HistoryEvent[]> => {
 
   if (examResult.status === 'fulfilled' && Array.isArray(examResult.value.data)) {
     const data = examResult.value.data;
+    // @ts-ignore
     const exams: HistoryEvent[] = data.map(s => ({
       type: 'exam', // 定義新的類型
       id: s.id.toString(), // 確保 id 是 string
