@@ -51,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { generateShortQuestion, gradeShortAnswer, type GradedAnswerResponse, type GradeAnswerRequest } from '../api/ai';
 import { saveShortAnswerRecord, type SaveShortAnswerPayload } from '../api/history';

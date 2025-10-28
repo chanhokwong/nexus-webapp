@@ -312,7 +312,6 @@ import LongAnswerPlayer from '../components/LongAnswerPlayer.vue';
 import ExamPlayer from '../components/ExamPlayer.vue';
 
 import { useI18n } from 'vue-i18n';
-import { ca } from 'date-fns/locale';
 
 
 // --- 基础状态 ---
