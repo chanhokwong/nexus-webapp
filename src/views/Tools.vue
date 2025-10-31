@@ -55,10 +55,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, onUpdated } from 'vue';
+import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 // 导入所有需要的图标
 import { Reading, AlarmClock, MagicStick, DocumentCopy } from '@element-plus/icons-vue';
 import { useI18n } from 'vue-i18n';
+
+const router = useRouter();
 
 // --- 國際化 ---
 const { t } = useI18n();
@@ -71,7 +74,6 @@ const extraction = computed(() => t('tools.extraction'));
 const paperTransTitle = computed(() => t('tools.paperTransTitle'));
 const paperTransDescribe = computed(() => t('tools.paperTransDescribe'));
 const comingSoon = computed(() => t('tools.comingSoon'));
-const paperTransUnableUse = computed(() => t('tools.paperTransUnableUse'));
 const pomodoro = computed(() => t('tools.pomodoro'));
 const pomodoroDescribe = computed(() => t('tools.pomodoroDescribe'));
 const pomodoroUnableUse = computed(() => t('tools.pomodoroUnableUse'));
@@ -82,6 +84,7 @@ const dataExtract = computed(() => t('tools.dataExtract'));
 const dataExtractDescribe = computed(() => t('tools.dataExtractDescribe'));
 const dataExtractUnableUse = computed(() => t('tools.dataExtractUnableUse'));
 const functionComingSoonMsg = computed(() => t('tools.functionComingSoonMsg'));
+
 
 // --- 1. 数据结构定义 ---
 interface Tool {
@@ -115,8 +118,8 @@ const allTools = ref<Tool[]>([
     id: 'paper-translation', title: paperTransTitle.value, description: paperTransDescribe.value, 
     icon: Reading, category: 'translation', 
     color: '#4FC3F7', bgColor: 'rgba(79, 195, 247, 0.1)',
-    disabled: true, badge: comingSoon.value,
-    action: () => ElMessage.info(paperTransUnableUse.value)
+    disabled: false, // badge: comingSoon.value,
+    action: () => router.push({ name: 'TranslateTools' })
   },
   { 
     id: 'pomodoro-clock', title: pomodoro.value, description: pomodoroDescribe.value, 

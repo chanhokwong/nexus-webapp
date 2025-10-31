@@ -182,7 +182,21 @@
     "dataExtract": "Datasheet data extraction.",
     "dataExtractDescribe": "Automatically extract key parameters and tables from PDF datasheets.",
     "dataExtractUnableUse": "The Datasheet data extraction feature is under development...",
-    "functionComingSoonMsg": "This feature will be launched soon. Stay tuned!"
+    "functionComingSoonMsg": "This feature will be launched soon. Stay tuned!",
+    "noFileSelected": "No file has been selected. Please upload a file or access an already uploaded file to use this feature.",
+    "translateToChinese": "English -> Chinese",
+    "translateToEnglish": "Chinese -> English",
+    "uploadNewFile": "Upload a new file",
+    "selectExistingFile": "Select from an existing file",
+    "translationPlaceholder": "No translation available",
+    "translate": "Translate",
+    "loadingFile": "Loading file content...",
+    "translating": "Translating in progress",
+    "uploadSuccess": "File upload successful!",
+    "uploadFailed": "File upload failed, please try again later.",
+    "translationCompleted": "Translation completed!",
+    "translationFailed": "Translation failed, please try again later.",
+    "page": "Page "
   },
   "workspaceDetail": {
     "docStore": "Document Store",

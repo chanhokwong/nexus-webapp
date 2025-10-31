@@ -182,7 +182,21 @@
     "dataExtract": "Datasheet 數據提取",
     "dataExtractDescribe": "從 PDF datasheet 中自動提取關鍵參數和表格",
     "dataExtractUnableUse": "Datasheet 數據提取功能正在開發中...",
-    "functionComingSoonMsg": "功能即將上線，敬請期待！"
+    "functionComingSoonMsg": "功能即將上線，敬請期待！",
+    "noFileSelected": "尚未選擇文件，請先上傳文件或存取已上載文件以使用該功能。",
+    "translateToChinese": "英文 -> 中文",
+    "translateToEnglish": "中文 -> 英文",
+    "uploadNewFile": "上傳新文件",
+    "selectExistingFile": "從已有文件中選擇",
+    "translationPlaceholder": "暫無翻譯內容",
+    "translate": "翻譯",
+    "loadingFile": "正在加載文件內容...",
+    "translating": "翻譯中",
+    "uploadSuccess": "文件上傳成功！",
+    "uploadFailed": "文件上傳失敗，請稍後再試。",
+    "translationCompleted": "翻譯完成！",
+    "translationFailed": "翻譯失敗，請稍後再試。",
+    "page": "頁數 P. "
   },
   "workspaceDetail": {
     "docStore": "文件庫",

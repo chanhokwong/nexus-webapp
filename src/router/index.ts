@@ -27,6 +27,7 @@ const LongAnswerReview = () => import('../views/LongAnswerReview.vue');
 const ExamReview = () => import('../views/ExamReview.vue');
 // 導入探索工具頁面組件
 const Tools = () => import('../views/Tools.vue');
+const TranslateTools = () => import('../views/TranslateTools.vue')
 // 導入設置頁面組件
 const Settings = () => import('../views/Settings.vue');
 
@@ -135,6 +136,11 @@ const routes = [
       { path: 'tools', 
         name: 'Tools', 
         component: Tools, 
+      },
+      { // [核心修正] 為中英對譯功能新增一個專屬的路由
+        path: 'tools/translate', 
+        name: 'TranslateTools',
+        component: TranslateTools,
       },
       { path: 'settings',
         name: 'Settings', 
