@@ -5,97 +5,79 @@
       <p class="page-description">{{ $t('tools.paperTransDescribe') }}</p>
     </header>
 
-    <!-- 翻譯控制面板 -->
+    <!-- [改造] 统一的控制面板 -->
     <div class="control-panel">
-      <div class="file-info">
+      <!-- 桌面端文件信息 -->
+      <div class="file-info desktop-view">
         <span v-if="selectedDocument">{{ selectedDocument.filename }}</span>
         <span v-else class="placeholder">{{ $t('tools.noFileSelected') }}</span>
       </div>
+      
       <div class="actions">
-        <!-- [新增] 語言選擇器 -->
-        <el-select v-model="targetLang" placeholder="目標語言" style="width: 150px;" :disabled="isTranslating">
-          <el-option :label="$t('tools.translateToChinese')" value="zh" />
-          <el-option :label="$t('tools.translateToEnglish')" value="en" />
-        </el-select>
+        <!-- 语言选择器 -->
+        <div class="lang-select-group">
+          <el-select v-model="sourceLang" popper-class="nexus-select-popper">
+            <el-option v-for="lang in allLanguages" :key="`src-${lang.value}`" :label="lang.label" :value="lang.value" />
+          </el-select>
+          <el-icon class="swap-icon"><Switch /></el-icon>
+          <el-select v-model="targetLang" :disabled="isTranslating" popper-class="nexus-select-popper">
+            <el-option v-for="lang in allLanguages" :key="`tgt-${lang.value}`" :label="lang.label" :value="lang.value" />
+          </el-select>
+        </div>
+        
+        <!-- 翻译按钮 -->
         <el-button 
           type="primary" 
           @click="startTranslation" 
           :disabled="!selectedDocument || isTranslating"
           :loading="isTranslating"
+          class="translate-btn"
         >
-          {{ $t('tools.translate') }}
+          <span class="tran-txt">{{ $t('tools.translate') }}</span>
+          <el-icon class="mobile-only"><DArrowRight /></el-icon>
         </el-button>
       </div>
     </div>
+    
+    <!-- 移動端專用內容切換選項卡 -->
+    <div class="content-tabs mobile-view">
+      <button class="tab-btn" :class="{active: activeTab === 'original'}" @click="activeTab = 'original'">{{ $t('tools.original_text') }}</button>
+      <button class="tab-btn" :class="{active: activeTab === 'translation'}" @click="activeTab = 'translation'">{{ $t('tools.translated_text') }}</button>
+    </div>
 
-    <!-- 主內容區：左右分欄 -->
+    <!-- 主內容區 -->
     <div class="content-grid">
-      <!-- 左欄：原文 -->
-      <div class="panel original-panel">
+      <!-- 1. 原文面板 -->
+      <div class="panel original-panel" v-show="activeTab === 'original' || !isMobile">
         <div v-if="isLoading" class="state-overlay">
-          <el-icon class="is-loading" size="2rem"><Loading /></el-icon>
-          <span>{{ $t('tools.loadingFile') }}</span>
+          <el-icon class="is-loading" size="2rem"><Loading /></el-icon><span>{{ $t('tools.loadingFile') }}</span>
         </div>
-
-        <!-- 初始狀態：選擇文件 -->
         <div v-else-if="!selectedDocument" class="initial-state">
-          <el-button size="large" @click="isUploadModalVisible = true" :icon="Upload">
-            {{ $t('tools.uploadNewFile') }}
-          </el-button>
-          <el-button size="large" @click="openSelectDocModal" :icon="Folder">
-            {{ $t('tools.selectExistingFile') }}
-          </el-button>
+          <el-button size="large" @click="isUploadModalVisible = true" :icon="Upload">{{ $t('tools.uploadNewFile') }}</el-button>
+          <el-button size="large" @click="openSelectDocModal" :icon="Folder">{{ $t('tools.selectExistingFile') }}</el-button>
         </div>
-
-        <!-- [核心修正] 顯示文件 iframe 預覽 -->
         <div v-else class="preview-wrapper">
-          <iframe 
-            v-if="selectedDocument.url"
-            :src="selectedDocument.url"
-            class="preview-iframe"
-            frameborder="0"
-          ></iframe>
-          <div v-else class="state-overlay">
-            <p>{{ $t('files.no_avaiable_preview_msg') }}</p>
-          </div>
+          <iframe v-if="selectedDocument.url" :src="selectedDocument.url" class="preview-iframe" frameborder="0"></iframe>
+          <div v-else class="state-overlay"><p>{{ $t('files.no_avaiable_preview_msg') }}</p></div>
         </div>
       </div>
 
-      <!-- 右欄：譯文 -->
-      <div class="panel translation-panel" ref="translationPanelRef" @scroll="updateScrollButtons">
-        <!-- [修正 1] 將加載狀態改為覆蓋層 -->
+      <!-- 2. 譯文面板 -->
+      <div class="panel translation-panel" v-show="activeTab === 'translation' || !isMobile" ref="translationPanelRef">
         <div v-if="isTranslating" class="state-overlay translation-loading">
-          <el-icon class="is-loading" size="2rem"><Loading /></el-icon>
-          <span>{{ $t('tools.translating') }}...</span>
+          <el-icon class="is-loading" size="2rem"><Loading /></el-icon><span>{{ $t('tools.translating') }}...</span>
         </div>
-
         <div v-if="!selectedDocument && !isTranslating" class="initial-state placeholder">
           <p>{{ $t('tools.translationPlaceholder') }}</p>
         </div>
-        
-        <!-- [核心修正] 使用分組結構渲染譯文 -->
         <div v-else class="text-content">
-          <!-- 遍歷分組後的頁面 -->
           <div v-for="(page, pageNum) in groupedParagraphs" :key="`page-${pageNum}`" class="page-group">
-            <h3 class="page-number-header">
-              {{ $t('tools.page') }} {{ pageNum }}
-            </h3>
-            <!-- 在每頁內部遍歷段落 -->
+            <h3 class="page-number-header">{{ $t('tools.page') }} {{ pageNum }}</h3>
             <p v-for="p in page" :key="p.id" :data-id="p.id">
               <span v-if="translatedParagraphs[p.id]" v-html="formatTranslation(translatedParagraphs[p.id])"></span>
               <span v-else-if="isTranslating" class="skeleton-line"></span>
             </p>
           </div>
-        </div>
-
-        <!-- [修正 3] 新增滾動按鈕 -->
-        <div class="scroll-controls" v-show="canScroll">
-          <button class="scroll-btn" @click="scrollUp" :disabled="!canScrollUp" :title="$t('common.scroll_up')">
-            <el-icon><ArrowUp /></el-icon>
-          </button>
-          <button class="scroll-btn" @click="scrollDown" :disabled="!canScrollDown" :title="$t('common.scroll_down')">
-            <el-icon><ArrowDown /></el-icon>
-          </button>
         </div>
       </div>
     </div>
@@ -155,16 +137,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, onUpdated, computed } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElDialog, ElButton, ElSelect, ElOption, ElIcon, ElUpload } from 'element-plus';
-import { Loading, Upload, Folder, UploadFilled, ArrowUp, ArrowDown } from '@element-plus/icons-vue';
+import { Switch, Loading, Upload, Folder, UploadFilled  } from '@element-plus/icons-vue';
 import { getAllUserDocuments, uploadDocument as apiUploadDocument, type DocumentInfo } from '../api/documents';
 import { getDocumentAsParagraphs, translateText, type Paragraph } from '../api/translate';
 
 const { t } = useI18n();
-
-
 
 // --- 狀態管理 ---
 const isLoading = ref(false);
@@ -173,7 +153,6 @@ const allUserDocuments = ref<DocumentInfo[]>([]);
 const selectedDocument = ref<DocumentInfo | null>(null);
 const originalParagraphs = ref<Paragraph[]>([]);
 const translatedParagraphs = reactive<Record<string, string>>({});
-const targetLang = ref<'zh' | 'en'>('zh');
 
 // --- 彈窗狀態 ---
 const isSelectDocModalVisible = ref(false);
@@ -181,10 +160,24 @@ const isUploadModalVisible = ref(false);
 
 // --- [新增] 滾動相關狀態 ---
 const translationPanelRef = ref<HTMLElement | null>(null);
-const canScroll = ref(false);
-const canScrollUp = ref(false);
-const canScrollDown = ref(false);
-let resizeObserver: ResizeObserver | null = null;
+
+// --- 語言選項數據 ---
+// 1. 定義一個包含所有可用語言的靜態列表
+const allLanguages = computed(() => [
+  { label: t('tools.lang_zh'), value: 'zh' },
+  { label: t('tools.lang_en'), value: 'en' },
+]);
+
+// 2. 定義當前選擇的語言狀態
+const sourceLang = ref('en'); // 默認源語言為中文
+const targetLang = ref<'en' | 'zh'>('zh'); // 默認目標語言為英文
+
+const activeTab = ref<'original' | 'translation'>('original');
+const isMobile = ref(window.innerWidth <= 768);
+
+const handleResize = () => {
+  isMobile.value = window.innerWidth <= 768;
+};
 
 // --- 方法 ---
 
@@ -289,62 +282,28 @@ const groupedParagraphs = computed(() => {
   }, {} as Record<number, Paragraph[]>);
 });
 
-// --- [新增] 滾動邏輯 ---
-function updateScrollButtons() {
-  const el = translationPanelRef.value;
-  if (!el) return;
-  const hasScrollbar = el.scrollHeight > el.clientHeight;
-  canScroll.value = hasScrollbar;
-  if (hasScrollbar) {
-    canScrollUp.value = el.scrollTop > 5;
-    canScrollDown.value = el.scrollTop + el.clientHeight < el.scrollHeight - 5;
-  } else {
-    canScrollUp.value = false;
-    canScrollDown.value = false;
-  }
-}
 
-function scrollUp() {
-  translationPanelRef.value?.scrollBy({ top: -300, behavior: 'smooth' });
-}
-
-function scrollDown() {
-  translationPanelRef.value?.scrollBy({ top: 300, behavior: 'smooth' });
-}
 
 // --- [新增] 生命周期鉤子來管理滾動監聽 ---
 onMounted(() => {
-  const el = translationPanelRef.value;
-  if (el) {
-    resizeObserver = new ResizeObserver(updateScrollButtons);
-    resizeObserver.observe(el);
-    updateScrollButtons();
-  }
+  window.addEventListener('resize', handleResize);
 });
 
 onUnmounted(() => {
-  if (resizeObserver && translationPanelRef.value) {
-    resizeObserver.unobserve(translationPanelRef.value);
-  }
+  window.removeEventListener('resize', handleResize);
 });
 
-onUpdated(() => {
-  // 當翻譯內容更新後，DOM 需要時間渲染，然後我們再檢查滾動狀態
-  updateScrollButtons();
-});
 </script>
 
 <style scoped>
+/* --- 基礎佈局 (移動端優先) --- */
+.desktop-view, .desktop-only { display: none; }
+.mobile-view, .mobile-only { display: block; }
 
-.bilingual-reader-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  padding: 24px;
-}
-.page-header { margin-bottom: 24px; }
-.page-title { font-size: 28px; font-weight: 700; }
-.page-description { font-size: 16px; color: var(--text-secondary); margin-top: 8px; }
+.bilingual-reader-container { height: 100%; display: flex; flex-direction: column; padding: 16px; }
+.page-header { margin-bottom: 16px; flex-shrink: 0; }
+.page-title { font-size: 24px; font-weight: 600; }
+.page-description { font-size: 14px; color: var(--text-secondary); margin-top: 8px; }
 
 .control-panel {
   display: flex;
@@ -360,147 +319,56 @@ onUpdated(() => {
 .file-info .placeholder { color: var(--text-secondary); font-style: italic; }
 .actions { display: flex; align-items: center; gap: 16px; }
 
-.content-grid {
-  flex-grow: 1;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  overflow: hidden; /* 關鍵：讓子元素可以獨立滾動 */
+.lang-select-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  padding: 4px;
 }
+.lang-select-group :deep(.el-select) { width: 120px; }
+.lang-select-group :deep(.el-input__wrapper) { background: none !important; box-shadow: none !important; }
+.swap-icon { color: var(--text-secondary); }
+.translate-btn { padding: 10px; min-height: 0; height: 40px; }
+.tran-txt { padding-left: 12px;}
+.copy-btn { background: none; border: none; color: var(--text-secondary); font-size: 20px; cursor: pointer; padding: 8px; border-radius: 8px; }
 
+.content-tabs { display: flex; background-color: var(--card-bg); border-radius: 10px; padding: 4px; margin-bottom: 16px; flex-shrink: 0; }
+.tab-btn { flex-grow: 1; padding: 10px; border: none; background: transparent; border-radius: 8px; color: var(--text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s; }
+.tab-btn.active { background-color: var(--active-bg); color: var(--text-primary); }
+
+.content-grid { flex-grow: 1; display: flex; min-height: 0; }
 .panel {
-  background-color: var(--panel-bg);
+  width: 100%;
+  height: 110%;
+  background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  padding: 0; 
-  overflow-y: hidden; /* 關鍵：使面板內容可滾動 */
-  position: relative; /* 用於覆蓋層定位 */
-}
-
-/* [核心修正] 為 iframe 預覽添加樣式 */
-.preview-wrapper {
-  width: 100%;
-  height: 100%;
-  background-color: var(--panel-bg);
-}
-.preview-iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-.translation-panel {
-    position: fixed;
-    padding: 24px; /* 右側面板仍然需要內邊距 */
-    overflow-y: auto;
-    left: calc(57% + 20px); /* 調整位置以適應 grid 間距 */
-    width: 650px;
-    height: 585px;
-}
-
-.text-content p {
-  line-height: 1.8;
-  margin-bottom: 1.5em;
-  font-size: 16px;
-}
-
-.translation-panel .text-content {
-  color: var(--text-primary);
-}
-
-/* [核心修正] 為頁碼標題和頁面分組添加樣式 */
-.page-group {
-  margin-bottom: 32px; /* 頁與頁之間的間距 */
-  padding-bottom: 24px;
-  border-bottom: 1px dashed var(--border-color); /* 頁分隔線 */
-}
-.page-group:last-of-type {
-  border-bottom: none;
-}
-
-.page-number-header {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-secondary);
-  margin-bottom: 20px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border-color);
-  display: inline-block; /* 讓下邊框只跟隨文字長度 */
-}
-
-.state-overlay {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  color: var(--text-secondary);
-  background-color: var(--panel-bg);
-  z-index: 5;
+  overflow: hidden;
+  position: relative;
 }
-/* [新增] 為翻譯加載覆蓋層添加半透明效果 */
-.state-overlay.translation-loading {
-    background-color: rgba(29, 31, 74, 0.8); /* 使用帶透明度的面板背景色 */
-    backdrop-filter: blur(5px);
-}
-.initial-state {
-    /* initial-state 樣式與 state-overlay 幾乎相同 */
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    display: flex; flex-direction: column; justify-content: center;
-    align-items: center; gap: 20px; color: var(--text-secondary);
-    
-}
-.initial-state.placeholder {
-    color: var(--text-secondary);
-    font-style: italic;
-}
+.panel-content { flex-grow: 1; position: relative; overflow-y: auto; }
+.initial-state { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 16px; height: 100%; padding: 20px; text-align: center; }
+.preview-wrapper { width: 100%; height: 100%; }
+.preview-iframe { width: 100%; height: 100%; border: none; }
 
-/* 翻譯佔位符骨架屏 */
-.skeleton-line {
-  display: inline-block;
-  width: 90%;
-  height: 1em;
-  background: linear-gradient(90deg, var(--border-color) 25%, rgba(45, 48, 102, 0.8) 50%, var(--border-color) 75%);
-  background-size: 200% 100%;
-  border-radius: 4px;
-  animation: shimmer 1.5s infinite;
+.translation-panel {
+    padding: 10px; /* 右側面板仍然需要內邊距 */
+    overflow-y: auto;
 }
-@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.text-content { padding: 20px; }
+.text-content p { line-height: 1.8; margin-bottom: 1.5em; font-size: 14px; color: var(--text-primary); }
+.page-group { margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px dashed var(--border-color); }
+.page-group:last-of-type { border-bottom: none; }
+.page-number-header { font-size: 14px; font-weight: 700; color: var(--text-secondary); margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); display: inline-block; }
 
-/* --- 上下滑动按钮 --- */
-.scroll-controls {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    display: flex; /* v-show 会控制显示/隐藏 */
-    flex-direction: column;
-    gap: 8px;
-    z-index: 2;
-}
-.scroll-btn {
-    width: 36px; height: 36px;
-    background-color: var(--panel-bg);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--border-color);
-    border-radius: 50%;
-    color: var(--text-secondary);
-    cursor: pointer;
-    display: flex; justify-content: center; align-items: center;
-    transition: all 0.3s;
-}
-.scroll-btn:hover:not(:disabled) {
-    border-color: var(--active-glow);
-    color: var(--text-primary);
-    transform: scale(1.1);
-}
-.scroll-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-}
-
-
+.state-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; color: var(--text-secondary); background-color: var(--panel-bg); z-index: 5; }
+.state-overlay.translation-loading { background-color: rgba(29, 31, 74, 0.8); backdrop-filter: blur(5px); }
+.initial-state { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; height: 100%; }
+.initial-state.placeholder { color: var(--text-secondary); font-style: italic; }
 /* 彈窗樣式 */
 .doc-list { max-height: 50vh; overflow-y: auto; }
 .doc-item {
@@ -511,9 +379,90 @@ onUpdated(() => {
   color: var(--text-primary);
 }
 .doc-item:hover { background-color: var(--active-bg); }
+
+/* --- 桌面端樣式 --- */
+@media (min-width: 769px) {
+  .desktop-view, .desktop-only { display: block; }
+  .mobile-view, .mobile-only { display: none; }
+
+  .bilingual-reader-container { padding: 24px; }
+  .page-title { font-size: 28px; }
+  
+  .control-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 16px;
+    background-color: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+  }
+  .file-info { font-size: 16px; font-weight: 500; }
+  .file-info .placeholder { color: var(--text-secondary); font-style: italic; }
+  .actions { display: flex; align-items: center; gap: 16px; }
+
+  .lang-select-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    padding: 4px;
+  }
+  .lang-select-group :deep(.el-select) { width: 120px; }
+  .lang-select-group :deep(.el-input__wrapper) { background: none !important; box-shadow: none !important; }
+  .swap-icon { color: var(--text-secondary); }
+  .lang-select-group { flex-grow: 0; }
+  .lang-select-group :deep(.el-select) { width: 150px; }
+  .translate-btn { min-width: 60px; }
+  .tran-txt { padding-left: 0px;}
+  
+  .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .panel { height: auto; }
+  .translation-panel {
+    position: fixed;
+    padding: 24px; /* 右側面板仍然需要內邊距 */
+    overflow-y: auto;
+    left: calc(57% + 20px); /* 調整位置以適應 grid 間距 */
+    width: 650px;
+    height: 585px;
+  }
+}
 </style>
 
 <style>
+/* --- [核心最终修正] 全局自定义滚动条样式 --- */
+
+/* 
+  我们为所有可能出现滚动条的 `.main-content` 区域
+  以及其内部的元素定义统一的滚动条样式
+*/
+.main-content ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px; /* 同时美化水平滚动条 */
+}
+
+.main-content ::-webkit-scrollbar-track {
+  /* 轨道背景：设置为透明 */
+  background: transparent;
+}
+
+.main-content ::-webkit-scrollbar-thumb {
+  /* 滑块本身 */
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  
+  /* 添加一个最小高度，防止滑块变得过小 */
+  min-height: 30px;
+}
+
+.main-content ::-webkit-scrollbar-thumb:hover {
+  /* 鼠标悬停在滑块上时 */
+  background-color: rgba(255, 255, 255, 0.4);
+}
 
 /* 弹窗主体样式 */
 .nexus-dialog {

@@ -1,42 +1,43 @@
 <template>
-  <div v-if="isLoading" class="loading-state">正在加載練習紀錄...</div>
-  
-  <div v-else-if="historyData" class="review-container">
-    <header class="page-header">
-      <h1 class="page-title">長答題回顧</h1>
-      <button class="btn-back" @click="$router.back()">
-        <el-icon><ArrowLeft /></el-icon>
-        <span>返回歷史列表</span>
-      </button>
-    </header>
-
-    <div class="summary-card">
-      <div class="summary-item">
-        <span class="label">源自工作台</span>
-        <span class="value">{{ historyData.workspace_name }}</span>
-      </div>
-      <div class="summary-item">
-        <span class="label">練習時間</span>
-        <span class="value">{{ new Date(historyData.created_at).toLocaleString() }}</span>
-      </div>
-    </div>
+  <div class="long-answer-review-page">
+    <div v-if="isLoading" class="loading-state">{{ $t('longAnswerReview.loading') }}</div>
     
-    <div class="records-list">
-      <div v-for="(record, index) in historyData.records" :key="index" class="record-item">
-        <div class="question-header">
-          <span class="question-number">問題 {{ index + 1 }}</span>
-          <p class="question-text">{{ record.question }}</p>
+    <div v-else-if="historyData" class="review-container">
+      <header class="page-header">
+        <div class="header-main-content">
+          <h1 class="page-title">{{ $t('longAnswerReview.title') }}</h1>
         </div>
-        
-        <div class="results-phase">
-          <!-- 左侧：总分 + 评分细则 -->
-          <div class="results-left-panel">
+        <button class="btn-back" @click="$router.back()">
+          <el-icon><ArrowLeft /></el-icon>
+          <span class="desktop-only">{{ $t('longAnswerReview.return_history') }}</span>
+        </button>
+      </header>
+
+      <div class="summary-card">
+        <div class="summary-item">
+          <span class="label">{{ $t('longAnswerReview.from_workspace') }}</span>
+          <span class="value">{{ historyData.workspace_name }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">{{ $t('longAnswerReview.practice_time') }}</span>
+          <span class="value">{{ new Date(historyData.created_at).toLocaleString() }}</span>
+        </div>
+      </div>
+      
+      <div class="records-list">
+        <div v-for="(record, index) in historyData.records" :key="index" class="record-item">
+          <div class="question-header">
+            <span class="question-number">{{ $t('longAnswerReview.question') }} {{ index + 1 }}</span>
+            <p class="question-text">{{ record.question }}</p>
+          </div>
+          
+          <div class="results-grid">
             <div class="result-card score-card">
-              <div class="score-label">綜合得分</div>
+              <div class="score-label">{{ $t('longAnswerReview.overall_score') }}</div>
               <div class="score-value">{{ record.grading_result.overall_score }}</div>
             </div>
-            <div class="result-card">
-              <h3>評分標準</h3>
+            <div class="result-card marking-scheme">
+              <h3>{{ $t('longAnswerReview.marking_scheme') }}</h3>
               <ul class="marking-scheme-list">
                 <li v-for="(item, itemIndex) in record.grading_result.marking_scheme" :key="itemIndex" class="marking-item">
                   <div class="criterion-header">
@@ -47,29 +48,25 @@
                 </li>
               </ul>
             </div>
-          </div>
-          
-          <!-- 右侧：评价、你的答案、参考答案 -->
-          <div class="results-right-panel">
-            <div class="result-card">
-              <h3>AI 深度評價</h3>
+            <div class="result-card ai-feedback">
+              <h3>{{ $t('longAnswerReview.ai_feedback') }}</h3>
               <MarkdownRenderer :markdown="record.grading_result.feedback" />
             </div>
-            <div class="result-card">
-              <h3>你的答案</h3>
+            <div class="result-card user-answer">
+              <h3>{{ $t('longAnswerReview.your_answer') }}</h3>
               <p class="user-answer-text">{{ record.user_answer }}</p>
             </div>
-            <div class="result-card">
-              <h3>參考答案</h3>
+            <div class="result-card standard-answer">
+              <h3>{{ $t('longAnswerReview.standard_answer') }}</h3>
               <MarkdownRenderer :markdown="record.grading_result.standard_answer" />
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div v-else class="empty-state">找不到該練習的詳細紀錄。</div>
+    <div v-else class="empty-state">{{ $t('longAnswerReview.load_fail') }}</div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -79,15 +76,17 @@ import { ElMessage } from 'element-plus';
 import { ArrowLeft } from '@element-plus/icons-vue';
 import { getLongAnswerHistoryById, type LongAnswerDetail } from '../api/history';
 import MarkdownRenderer from '../components/MarkdownRenderer.vue';
+import { useI18n } from 'vue-i18n';
 
 const route = useRoute();
 const historyData = ref<LongAnswerDetail | null>(null);
 const isLoading = ref(true);
+const { t } = useI18n();
 
 onMounted(async () => {
   const sessionId = route.params.id as string;
   if (!sessionId) {
-    ElMessage.error("无效的会话 ID");
+    ElMessage.error(t('longAnswerReview.invalid_id'));
     isLoading.value = false;
     return;
   }
@@ -97,7 +96,7 @@ onMounted(async () => {
     const data = await getLongAnswerHistoryById(sessionId);
     historyData.value = data;
   } catch (error) {
-    ElMessage.error("加載长答题纪录失败");
+    ElMessage.error(t('longAnswerReview.load_fail'));
     console.error("Error fetching long answer detail:", error);
   } finally {
     isLoading.value = false;
@@ -106,12 +105,16 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* --- 整体布局 (复用 NoteReview/QuizReview 的成功模式) --- */
+/* --- 基礎佈局 --- */
+.long-answer-review-page {
+  height: 100%;
+  overflow-y: auto;
+  padding: 24px;
+}
 .loading-state, .empty-state {
   display: flex; justify-content: center; align-items: center;
   height: 100%; color: var(--text-secondary);
 }
-
 .review-container {
   display: flex;
   flex-direction: column;
@@ -167,49 +170,59 @@ onMounted(async () => {
 .summary-item .label { font-size: 14px; color: var(--text-secondary); }
 .summary-item .value { font-size: 18px; font-weight: 500; color: var(--text-primary); }
 
-/* --- [核心] 可滚动的内容区 --- */
+/* --- 問題列表 --- */
 .records-list {
-  flex-grow: 1;
-  overflow-y: auto;
-  min-height: 0;
-  padding-right: 15px; /* 为滚动条留出空间 */
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
 }
 .record-item {
-  margin-bottom: 40px;
   padding-bottom: 30px;
   border-bottom: 1px solid var(--border-color);
 }
 .record-item:last-child { border-bottom: none; }
 
-/* --- 问答卡片样式 (复用 ShortAnswerPlayer.vue 的结果卡片样式) --- */
-.question-header { margin-bottom: 20px; }
+.question-header { margin-bottom: 24px; }
 .question-number { font-size: 14px; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 8px; }
 .question-text { font-size: 20px; font-weight: 500; color: var(--text-primary); line-height: 1.6; }
 
-.results-phase {
+/* --- 问答卡片样式 (复用 ShortAnswerPlayer.vue 的结果卡片样式) --- */
+.question-header { margin-bottom: 24px; }
+.question-number { font-size: 14px; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 8px; }
+.question-text { font-size: 18px; font-weight: 500; color: var(--text-primary); line-height: 1.6; }
+
+/* --- 結果網格 (桌面端) --- */
+.results-grid {
   display: grid;
   grid-template-columns: 1fr 2fr;
+  grid-template-areas:
+    "score    feedback"
+    "scheme   feedback"
+    "scheme   user_answer"
+    "scheme   standard_answer";
   gap: 24px;
 }
-.results-left-panel, .results-right-panel {
-  display: flex; flex-direction: column;
-  gap: 24px;
-}
+.score-card { grid-area: score; }
+.marking-scheme { grid-area: scheme; }
+.ai-feedback { grid-area: feedback; }
+.user-answer { grid-area: user_answer; }
+.standard-answer { grid-area: standard_answer; }
+
 .result-card {
-  background-color: rgba(17, 19, 44, 0.5);
+  background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 20px;
 }
 .result-card h3 {
-  font-size: 14px; font-weight: 700; text-transform: uppercase;
+  font-size: 14px; font-weight: 600; text-transform: uppercase;
   color: var(--text-secondary); margin-bottom: 12px;
   padding-bottom: 10px; border-bottom: 1px solid var(--border-color);
 }
 .result-card p, .result-card :deep(.markdown-body) {
   font-size: 16px; line-height: 1.7; color: var(--text-primary);
 }
-.score-card { text-align: center; padding: 24px; border-color: var(--active-glow); }
+.score-card { text-align: center; border-color: var(--active-glow); display: flex; flex-direction: column; justify-content: center; }
 .score-label { font-size: 16px; color: var(--text-secondary); margin-bottom: 8px; }
 .score-value { font-size: 64px; font-weight: 700; color: var(--active-glow); }
 
@@ -221,4 +234,102 @@ onMounted(async () => {
 .criterion-score { font-weight: 700; color: var(--active-glow); background: var(--active-bg); padding: 2px 8px; border-radius: 4px; font-size: 14px; }
 .criterion-comment { font-size: 14px; color: var(--text-secondary); }
 .user-answer-text { white-space: pre-wrap; }
+
+/* --- [核心] 移動端響應式樣式 --- */
+@media (max-width: 768px) {
+  .review-container {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    
+    /* [关键] 添加滚动能力 */
+    overflow-y: auto;
+    
+    background: var(--panel-bg);
+    border-radius: 12px;
+    padding: 30px;
+    border: 1px solid var(--border-color);
+    z-index: 1;
+  }
+  .long-answer-review-page {
+    padding: 16px;
+  }
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .page-title { font-size: 24px; }
+  .btn-back {
+    position: absolute;
+    top: 130px;
+    right: 70px;
+    padding: 8px;
+    border-radius: 50%;
+  }
+  .desktop-only {
+    display: none;
+  }
+  
+  .summary-card {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+  }
+  .summary-item {
+    border-right: none;
+    padding: 0;
+  }
+
+  .question-text { font-size: 18px; }
+
+  /* 將網格變為單列 */
+  .results-grid {
+    grid-template-areas:
+      "score"
+      "feedback"
+      "user_answer"
+      "standard_answer"
+      "scheme";
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .score-value { font-size: 40px; }
+}
+</style>
+
+<style>
+/* --- [核心最终修正] 全局自定义滚动条样式 --- */
+
+/* 
+  我们为所有可能出现滚动条的 `.main-content` 区域
+  以及其内部的元素定义统一的滚动条样式
+*/
+.main-content ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px; /* 同时美化水平滚动条 */
+}
+
+.main-content ::-webkit-scrollbar-track {
+  /* 轨道背景：设置为透明 */
+  background: transparent;
+}
+
+.main-content ::-webkit-scrollbar-thumb {
+  /* 滑块本身 */
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  
+  /* 添加一个最小高度，防止滑块变得过小 */
+  min-height: 30px;
+}
+
+.main-content ::-webkit-scrollbar-thumb:hover {
+  /* 鼠标悬停在滑块上时 */
+  background-color: rgba(255, 255, 255, 0.4);
+}
 </style>

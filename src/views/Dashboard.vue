@@ -5,60 +5,59 @@
     </header>
 
     <section class="dashboard-section">
-      <h2 class="section-title">{{ $t('dashboard.quick_start') }}</h2>
-      <div class="card-grid">
-        <!-- 1. 文件工作台  -->
-        <div class="dashboard-card action-card" @click="router.push('/workspaces')">
+      <!-- [改造] 添加 'quick-start-title' 類以添加圖標 -->
+      <h2 class="section-title quick-start-title">{{ $t('dashboard.quick_start') }}</h2>
+      <!-- [改造] 將 card-grid 改為 quick-start-list -->
+      <div class="quick-start-list">
+        <!-- 1. 文件工作台 -->
+        <div class="quick-start-card" @click="router.push('/workspaces')">
           <div class="card-icon-wrapper"><el-icon><Files /></el-icon></div>
-          <h3>{{ $t('dashboard.workspaces') }}</h3>
-          <p>{{ $t('dashboard.workspaces_content') }}</p>
+          <div class="card-text-content">
+            <h3>{{ $t('dashboard.workspaces') }}</h3>
+            <p>{{ $t('dashboard.workspaces_content') }}</p>
+          </div>
         </div>
 
-        <!-- 2. 知识宝库  -->
-        <div class="dashboard-card action-card" @click="router.push('/history')">
-          <!-- 使用一个更合适的“宝箱”或“数据库”图标 -->
-          <div class="card-icon-wrapper" style="background-color: rgba(74, 0, 224, 0.1);"><el-icon><TakeawayBox /></el-icon></div>
-          <h3>{{ $t('dashboard.knowledge_base') }}</h3>
-          <p>{{ $t('dashboard.knowledge_base_content') }}</p>
+        <!-- 2. 知识宝库 -->
+        <div class="quick-start-card" @click="router.push('/history')">
+          <div class="card-icon-wrapper" style="background-color: rgba(149, 117, 205, 0.15); color: #B39DDB;"><el-icon><TakeawayBox /></el-icon></div>
+          <div class="card-text-content">
+            <h3>{{ $t('dashboard.knowledge_base') }}</h3>
+            <p>{{ $t('dashboard.knowledge_base_content') }}</p>
+          </div>
         </div>
 
-        <!-- 3. 工具箱  -->
-        <div class="dashboard-card action-card" @click="router.push('/tools')">
-           <div class="card-icon-wrapper" style="background-color: rgba(0, 212, 255, 0.1);"><el-icon><Suitcase /></el-icon></div>
-          <h3>{{ $t('dashboard.toolbox') }}</h3>
-          <p>{{ $t('dashboard.toolbox_content') }}</p>
+        <!-- 3. 工具箱 -->
+        <div class="quick-start-card" @click="router.push('/tools')">
+           <div class="card-icon-wrapper" style="background-color: rgba(77, 182, 172, 0.15); color: #4DB6AC;"><el-icon><Suitcase /></el-icon></div>
+           <div class="card-text-content">
+            <h3>{{ $t('dashboard.toolbox') }}</h3>
+            <p>{{ $t('dashboard.toolbox_content') }}</p>
+           </div>
         </div>
       </div>
     </section>
 
     <section class="dashboard-section">
       <h2 class="section-title">{{ $t('dashboard.recent_projects') }}</h2>
-
-      <!-- 加载状态 -->
       <div v-if="isLoading" class="loading-state">{{ $t('dashboard.loadProjectMsg') }}</div>
-      
-      <!-- 数据加载完成后 -->
       <template v-else>
-        <!-- [核心] 动态渲染最近的项目 -->
-        <div v-if="recentWorkspaces.length > 0" class="card-grid recent-projects-grid">
+        <div v-if="recentWorkspaces.length > 0" class="recent-projects-grid">
+          <!-- [改造] 使用新的 recent-project-card 樣式 -->
           <div 
             v-for="ws in recentWorkspaces" 
             :key="ws.id" 
-            class="workspace-card"
+            class="recent-project-card"
             @click="navigateTo(`/workspaces/${ws.id}`)"
           >
-            <!-- [核心] 完全复用 WorkspaceList.vue 的卡片结构 -->
-            <div class="card-header">
-              <el-icon class="card-icon"><Collection /></el-icon>
-              <!-- 可以在这里添加一个 mini 的操作按钮，如果需要的话 -->
-            </div>
+            <div class="card-icon-wrapper small"><el-icon><Collection /></el-icon></div>
             <h2 class="card-title">{{ ws.name }}</h2>
             <p class="card-description">{{ ws.description || 'NULL' }}</p>
-            <div class="card-meta">{{ formatMeta(ws) }}</div>
+            <div class="card-meta">
+              <span class="meta-item"><el-icon><Clock /></el-icon>{{ formatMeta(ws) }}</span>
+            </div>
           </div>
         </div>
-
-        <!-- 空状态 -->
         <div v-else class="empty-state">
           <p>{{ $t('dashboard.no_recent_projects') }}</p>
         </div>
@@ -157,175 +156,183 @@ function formatMeta(workspace: any): string {
 </script>
 
 <style scoped>
-/* --- [精修] 样式与最终设计图完全对齐 --- */
+/* --- [美化核心] 移動端優先 (Mobile-First) --- */
+
+.dashboard-container {
+  padding-bottom: 40px; /* 為底部內容留出空間 */
+}
+
 .dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 40px;
+  margin-bottom: 30px;
 }
-
 .welcome-title {
-  font-family: 'Noto Sans TC', sans-serif;
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
 }
+.dashboard-section {
+  margin-bottom: 30px;
+}
+.section-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  position: relative;
+}
+/* 為 "快速開始" 添加閃爍圖標 */
+.quick-start-title::after {
+  content: '✨';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 10px;
+  animation: sparkle 2s infinite ease-in-out;
+}
+@keyframes sparkle { 0%, 100% { opacity: 1; transform: translateY(-50%) scale(1.1); } 50% { opacity: 0.5; transform: translateY(-50%) scale(0.9); } }
 
-.action-btn {
+/* 快速開始：移動端為列表 */
+.quick-start-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.quick-start-card {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border-radius: 8px;
-  border: none;
-  font-family: 'Noto Sans TC', sans-serif;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.action-btn.primary {
-  background-color: #fff;
-  color: #0d0c22;
-}
-.action-btn.primary:hover {
-  background-color: #e0e0e0;
-}
-.action-btn .el-icon {
-  font-size: 20px;
-}
-
-.dashboard-section {
-  margin-bottom: 40px;
-}
-
-.section-title {
-  font-family: 'Noto Sans TC', sans-serif;
-  font-size: 20px;
-  color: #c5cae9;
-  margin-bottom: 20px;
-}
-
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 25px;
-}
-
-.quick-start-grid {
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-}
-.recent-projects-grid {
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-}
-
-.dashboard-card {
-  background: rgba(13, 12, 34, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 16px;
+  padding: 16px;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  padding: 25px;
+  cursor: pointer;
   transition: all 0.3s ease;
 }
-
-.dashboard-card.action-card {
-  cursor: pointer;
+.quick-start-card:hover {
+  transform: translateY(-3px);
+  background-color: var(--active-bg);
+  border-color: var(--active-glow);
 }
-.dashboard-card.action-card:hover {
-  transform: translateY(-5px);
-  background: rgba(29, 26, 61, 0.7);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
 .card-icon-wrapper {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
+  width: 44px; height: 44px;
+  flex-shrink: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 20px;
-  background-color: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  background-color: rgba(88, 94, 227, 0.15); /* 默認顏色 */
+  color: #9FA8DA;
 }
 .card-icon-wrapper .el-icon {
-  font-size: 24px;
-  color: #fff;
+  font-size: 22px;
+}
+.card-text-content h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+.card-text-content p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
 }
 
-.dashboard-card h3 {
-  font-family: 'Noto Sans TC', sans-serif;
-  font-size: 20px;
-  margin-bottom: 10px;
-  color: #fff;
-}
-
-.dashboard-card p {
-  font-family: 'Noto Sans TC', sans-serif;
-  font-size: 14px;
-  color: #c5cae9;
-  line-height: 1.6;
-}
-
-.dashboard-card.disabled {
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-.empty-state {
-  background: rgba(13, 12, 34, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 40px;
-  text-align: center;
-  color: #8a91b4;
-  font-family: 'Noto Sans TC', sans-serif;
-}
-
-/* [核心] 复用 WorkspaceList.vue 的网格和卡片样式 */
-.card-grid {
-  display: grid;
-  gap: 24px;
-}
-.quick-start-grid {
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-}
+/* 最近的項目：移動端為兩列網格 */
 .recent-projects-grid {
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.recent-project-card {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 180px;
+}
+.recent-project-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  border-color: var(--active-glow);
+}
+.recent-project-card .card-icon-wrapper.small {
+  width: 36px; height: 36px; margin-bottom: 12px;
+  background-color: rgba(88, 94, 227, 0.15);
+  color: #9FA8DA;
+}
+.recent-project-card .card-icon-wrapper .el-icon { font-size: 20px; }
+.recent-project-card .card-title {
+  font-size: 15px; font-weight: 600; color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin: 0 0 4px 0;
+}
+.recent-project-card .card-description {
+  font-size: 12px; color: var(--text-secondary);
+  flex-grow: 1; margin: 0;
+}
+.recent-project-card .card-meta {
+  font-size: 11px; color: var(--text-secondary);
+  margin-top: auto; padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-/* 
-  这里的 .workspace-card 样式
-  与 src/views/WorkspaceList.vue 中的 .workspace-card 完全一致
-*/
-.workspace-card {
-    display: flex; flex-direction: column; gap: 12px;
-    padding: 24px; background: rgba(13, 12, 34, 0.5);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--border-color); border-radius: 12px;
-    transition: all 0.3s;
-    min-height: 300px;
-    cursor: pointer;
-    position: relative;
-}
-.workspace-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 20px var(--active-bg);
-    border-color: var(--active-glow);
-}
-
-.card-header { display: flex; justify-content: space-between; align-items: center; }
-.card-icon { font-size: 24px; color: var(--text-secondary); }
-.card-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
-.card-description { font-size: 14px; color: var(--text-secondary); flex-grow: 1; }
-.card-meta {
-    font-size: 12px; color: var(--text-secondary);
-    border-top: 1px solid var(--border-color);
-    padding-top: 12px; 
-    margin-top: auto;
-}
-
-.loading-state {
+/* 加載與空狀態 */
+.loading-state, .empty-state {
   padding: 40px;
   text-align: center;
   color: var(--text-secondary);
+  background-color: var(--card-bg);
+  border-radius: 12px;
+}
+
+/* --- [響應式] 桌面端樣式 --- */
+@media (min-width: 768px) {
+  .welcome-title {
+    font-size: 32px;
+  }
+  .dashboard-section {
+    margin-bottom: 40px;
+  }
+  .section-title {
+    font-size: 20px;
+  }
+  
+  /* 快速開始：桌面端變為三列網格 */
+  .quick-start-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .quick-start-card {
+    /* 在網格佈局中，可以變回垂直佈局以獲得更好視覺效果 */
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 24px;
+    text-align: left;
+  }
+  .quick-start-card .card-icon-wrapper {
+    margin-bottom: 20px;
+  }
+
+  /* 最近的項目：桌面端自適應更多列 */
+  .recent-projects-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+  }
+  .recent-project-card {
+    padding: 24px;
+    /* --- [核心修改] 在這裡添加最小高度 --- */
+    min-height: 300px;
+  }
 }
 </style>

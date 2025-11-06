@@ -1,25 +1,24 @@
 <template>
-  <!-- [核心] 根元素用于控制布局 -->
   <div class="clue-sheet-review-container">
-    <div v-if="isLoading" class="loading-state">正在加載記憶卡片...</div>
+    <div v-if="isLoading" class="loading-state">{{ $t('clueSheetReview.loading') }}</div>
 
     <template v-else-if="clueSheetData">
       <header class="page-header">
-        <h1 class="page-title">記憶卡片回顧</h1>
+        <!-- [改造] 將 page-title 和 cluesheet-title 整合 -->
+        <h1 class="page-title">{{ $t('clueSheetReview.title') }}</h1>
         <button class="btn-back" @click="$router.back()">
           <el-icon><ArrowLeft /></el-icon>
-          <span>返回歷史列表</span>
+          <span class="desktop-only">{{ $t('clueSheetReview.return_history') }}</span>
         </button>
-        <h1 class="cluesheet-title">{{ clueSheetData.title }}</h1>
       </header>
       
-      <!-- [核心] 内容面板现在是透明的，只用于定位 -->
       <div class="clue-sheet-panel">
+        <h2 class="cluesheet-title">{{ clueSheetData.title }}</h2>
         <FlashcardViewer :cards="clueSheetData.cards" />
       </div>
     </template>
 
-    <div v-else class="empty-state">找不到該記憶卡片集的詳細紀錄。</div>
+    <div v-else class="empty-state">{{ $t('clueSheetReview.not_found') }}</div>
   </div>
 </template>
 
@@ -31,31 +30,33 @@ import { ArrowLeft } from '@element-plus/icons-vue';
 // [核心] 导入新的 API 函数和类型
 import { getClueSheetById, type ClueSheetDetail } from '../api/history'; 
 import FlashcardViewer from '../components/FlashcardViewer.vue';
+import { useI18n } from 'vue-i18n';
 
 const route = useRoute();
 const clueSheetData = ref<ClueSheetDetail | null>(null);
 const isLoading = ref(true);
+const { t } = useI18n();
 
 onMounted(async () => {
   document.body.classList.add('fullscreen-mode');
   const clueSheetId = route.params.id as string;
   if (!clueSheetId) {
-    ElMessage.error("无效的 ID");
+    ElMessage.error(t('clueSheetReview.invalid_id'));
     isLoading.value = false;
     return;
   }
 
   try {
-    // 调用 API: GET /clue-sheets/{clue_sheet_id}
     const data = await getClueSheetById(Number(clueSheetId));
     clueSheetData.value = data;
   } catch (error) {
-    ElMessage.error("加載记忆卡片详情失败");
+    ElMessage.error(t('clueSheetReview.load_fail'));
     console.error("Error fetching clue sheet detail:", error);
   } finally {
     isLoading.value = false;
   }
 });
+
 
 onUnmounted(() => {
   document.body.classList.remove('fullscreen-mode');
@@ -110,13 +111,68 @@ onUnmounted(() => {
     position: fixed;
     width: 1600px;
     height: 700px;
+    display: flex;
+    margin: auto;
 }
 
 .cluesheet-title {
-    position: fixed;
-    left: 670px;
-    top: 180px;
+    display: flex;
+    margin: auto;
+    margin-top: 90px;
+    margin-left: 700px;
 }
+
+@media (max-width: 768px) {
+  .clue-sheet-review-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-shrink: 0;
+  }
+
+  .page-title { font-size: 24px; font-weight: 600; padding: 50px 10px 30px 0px; }
+
+  .btn-back {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px; /* 純圖標按鈕 */
+    background-color: rgba(255,255,255,0.05);
+    color: var(--text-secondary); border: 1px solid var(--border-color);
+    border-radius: 50%; /* 圓形 */
+    cursor: pointer; transition: all 0.2s;
+    z-index: 5; margin-top: 25px;
+  }
+  .btn-back:hover {
+    background-color: var(--active-bg);
+    color: var(--text-primary);
+  }
+  .desktop-only { display: none; } /* 移動端默認隱藏文字 */
+
+  .clue-sheet-panel {
+    flex-grow: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* 讓卡片垂直居中 */
+    gap: 20px;
+  }
+
+  .cluesheet-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+  }
+}
+
 </style>
 
 <style>

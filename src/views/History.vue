@@ -219,7 +219,7 @@ const viewHistoryDetail = (event: HistoryEvent) => {
     left: calc(var(--sidebar-width-collapsed) + 40px);
   }
 
-  .page-header { top: 40px; }
+  .page-header { top: 40px; left: 280px; }
   .filter-bar { top: 110px; }
   .history-stream-container { top: 180px; bottom: 40px; }
 }
@@ -379,6 +379,19 @@ const viewHistoryDetail = (event: HistoryEvent) => {
   
   .history-event:hover .event-card {
     transform: none; /* 在移動端移除懸停位移效果 */
+  }
+
+  .loading-state, .empty-state {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    height: 100%;
+    color: var(--text-secondary);
+    position: fixed;
+    top: 20px;
+    left: 160px;
   }
 }
 </style>

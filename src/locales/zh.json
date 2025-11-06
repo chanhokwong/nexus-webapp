@@ -77,7 +77,12 @@
     "upload_success_msg": "上傳成功！",
     "upload_fail_msg": "上傳失敗。",
     "no_avaiable_preview_msg": "該文件沒有可用的預覽鏈接。 ",
-    "no_any_files": "目前列表中沒有任何文件"
+    "no_any_files": "目前列表中沒有任何文件",
+    "manage_by_tags": "輕鬆管理你的文件",
+    "filter": "篩選",
+    "sort_by": "排序方式",
+    "filter_options": "篩選選項",
+    "ai_summary": "AI 摘要"
   },
   "graphReview":{
     "loadKnowledghGraphMsg": "正在加載知識圖譜...",
@@ -123,6 +128,71 @@
     "noFindQuizHistory": "找不到該測驗的詳細紀錄。",
     "invalidQuizId": "無效的測驗 ID",
     "loadQuizDetailFail": "加載測驗詳情失敗"
+  },
+  "chatReview": {
+    "loading": "正在加載聊天紀錄...",
+    "title": "聊天紀錄回顧",
+    "return_history": "返回歷史列表",
+    "load_fail": "找不到該聊天紀錄的詳細訊息。",
+    "invalid_id": "無效的聊天 ID。",
+    "legacy_chat": "此為舊版聊天紀錄，無法繼續對話。",
+    "legacy_chat_warning": "此為舊版聊天紀錄，僅供查看，無法繼續對話。",
+    "load_fail_api": "API 響應格式不完整。"
+  },
+  "clueSheetReview": {
+    "loading": "正在加載記憶卡片...",
+    "title": "記憶卡片回顧",
+    "return_history": "返回歷史列表",
+    "not_found": "找不到該記憶卡片集的詳細紀錄。",
+    "invalid_id": "無效的 ID",
+    "load_fail": "加載記憶卡片詳情失敗"
+  },
+  "shortAnswerReview": {
+    "loading": "正在加載紀錄...",
+    "title": "短答題回顧",
+    "return_history": "返回歷史列表",
+    "from_workspace": "源自工作台",
+    "practice_time":"練習時間",
+    "question": "問題",
+    "your_score": "你的得分",
+    "your_answer": "你的答案",
+    "ai_feedback": "AI 評價",
+    "standard_answer": "參考答案",
+    "load_fail": "找不到該練習的詳細紀錄。",
+    "invalid_id": "無效的會話 ID"
+  },
+  "longAnswerReview": {
+    "loading": "正在加載練習紀錄...",
+    "title": "長答題回顧",
+    "return_history": "返回歷史列表",
+    "from_workspace": "源自工作台",
+    "practice_time": "練習時間",
+    "question": "問題",
+    "overall_score": "綜合得分",
+    "marking_scheme": "評分標準",
+    "ai_feedback": "AI 深度評價",
+    "your_answer": "你的答案",
+    "standard_answer": "參考答案",
+    "load_fail": "找不到該練習的詳細紀錄。",
+    "invalid_id": "無效的會話 ID"
+  },
+  "examReview": {
+    "loading": "正在加載模擬卷回顧...",
+    "completed_at": "完成於",
+    "from_workspace": "源自工作台",
+    "return": "返回",
+    "total_score": "總分",
+    "no_overall_feedback": "無總體評價。",
+    "question": "題目",
+    "points": "分",
+    "your_answer": "你的答案",
+    "not_answered": "未作答",
+    "standard_answer": "參考答案",
+    "no_standard_answer": "無參考答案",
+    "ai_feedback": "AI 深度評價",
+    "no_feedback": "無評價",
+    "score": "得分",
+    "load_fail": "無法加載該模擬卷的歷史記錄。"
   },
   "settings": {
     "title": "設定",
@@ -196,7 +266,11 @@
     "uploadFailed": "文件上傳失敗，請稍後再試。",
     "translationCompleted": "翻譯完成！",
     "translationFailed": "翻譯失敗，請稍後再試。",
-    "page": "頁數 P. "
+    "page": "頁數 P. ",
+    "original_text": "原文",
+    "translated_text": "譯文",
+    "lang_zh": "中文",
+    "lang_en": "英文"
   },
   "workspaceDetail": {
     "docStore": "文件庫",
@@ -269,7 +343,10 @@
     "gen_long_quiz_title": "長題目生成",
     "gen_long_quiz_desc": "練習拆解長題目並進行回答",
     "gen_exam_title": "試卷生成",
-    "gen_exam_desc": "根據所學內容生成模擬試卷"
+    "gen_exam_desc": "根據所學內容生成模擬試卷",
+    "files_count": "個文件",
+    "tools_count": "個工具",
+    "add_new_doc": "新增文件"
   },
   "workspaceList": {
     "myWorkspace": "我的工作台",
@@ -298,7 +375,8 @@
     "delConfirm": "刪除確認",
     "confirmDel": "確認刪除",
     "delSuccess": "刪除成功",
-    "delFail": "刪除失敗"
+    "delFail": "刪除失敗",
+    "manage_workspaces": "管理你的工作台和專案"
   },
   "history_setting": {
     "finishOneTest": "完成一次測驗",
@@ -328,5 +406,55 @@
     "enterDescription": "請輸入描述 (可選)",
     "cancel": "取消",
     "confirmCreate": "確認建立"
+  },
+  "planning": {
+    "title": "引導式策劃產生器",
+    "description": "回答幾個簡單問題，讓 AI 根據您的學習材料，為您度身訂做一份專業的策劃方案。",
+    "step1_title": "方案類型",
+    "step1_question": "您希望產生哪種類型的規劃方案？",
+    "step2_title": "目標與風格",
+    "step2_question_audience": "這個方案主要是給誰看的？（目標受眾）",
+    "step2_question_objective": "您希望透過此方案達成什麼核心目標？",
+    "step3_title": "細節要求",
+    "step3_question_tone": "您所期望的語調風格是？",
+    "step3_question_extra": "是否有任何額外的格式或內容要求？",
+    "step4_title": "選擇知識來源",
+    "step4_question_workspace": "請選擇一個工作台作為 AI 的知識來源",
+    "step4_description": "AI 將會分析這個工作台內的所有文件來產生您的規劃方案。您也可以選擇不使用任何工作台。",
+    "generate": "生成規劃方案",
+    "resultTitle": "{type} - 產生結果",
+    "unnamedPlan": "未命名規劃方案",
+    "step3_title_new": "內容大綱",
+    "step5_title": "知識源", 
+    "step3_question_outline": "請提供規劃方案的內容大綱",
+    "step3_placeholder_outline": "提供一個清晰的大綱，AI 將會嚴格按照您的結構來填充內容。\n例如：我想要寫一份以'北宋交子'為主題的論文，目的是為了探究交子的起源以及其對現代的影響\n論文架構: \n1. 摘要\n2. 引言\na. 研究背景與意義\n b. 研究問題與方法\n3. 交子的起源與發展\n4. 交子的發行與管理制度\n5. 交子的發展與社會影響\n6. 交子制度的衰敗及後續影響\n7. 交子的歷史意義與現代啟示\n8. 結論\n9. 參考文獻",
+    "step3_placeholder_extra": "可選。例如：要求包含具體的數據圖表、引用不少於三篇文獻等。",
+    "step4_title_new": "篇幅",
+    "step5_title_new": "風格",
+    "step6_title": "知識源",
+    "step4_question_word_count": "您預期的報告總字數大約是多少？",
+    "saveDisabledTooltip": "此策劃方案並非基於特定工作台生成，無法直接儲存為筆記。",
+    "selectWorkspacePlaceholder": "請選擇一個工作台（可選）",
+    "noWorkspaceOption": "不使用任何工作台（利用 AI 通用知識）",
+    "outlineRequiredError": "請填寫內容大綱以繼續下一步。",
+    "purposeRequiredError": "請填寫核心目標以繼續下一步。"
+  },
+  "common": {
+    "back": "返回",
+    "copy": "複製內容",
+    "saveAsNote": "另存為筆記",
+    "copiedSuccess": "已成功複製到剪貼簿！",
+    "copiedFailed": "複製失敗，請手動複製。",
+    "savedSuccess": "已成功儲存為筆記！",
+    "savedFailed": "儲存失敗，請重試。",
+    "previous_step": "上一步",
+    "next_step": "下一步",
+    "optional": "可選",
+    "wordCount": "字數: {count}",
+    "done": "執行"
+  },
+  "errors": {
+    "fetchWorkspacesFailed": "取得工作台清單失敗，請重新整理頁面重試。",
+    "generationFailed": "產生失敗，請檢查您的輸入並重試。"
   }
 }

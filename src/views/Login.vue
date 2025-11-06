@@ -72,7 +72,7 @@ const GOOGLE_CLIENT_ID = '432133069805-jrp0cqu0ltphuinc3h1i6enrlqb3bd79.apps.goo
 //    Google 的库会通过 window 对象来调用这个函数
 // @ts-ignore
 window.handleGoogleCredentialResponse = async (response: any) => {
-  const loading = ElMessage({ message: '正在通过 Google 验证...', type: 'info', duration: 0 });
+  const loading = ElMessage({ message: '正在通过 Google 驗證...', type: 'info', duration: 0 });
   try {
     const tokenResponse = await loginWithGoogle({ id_token: response.credential });
     userStore.setToken(tokenResponse.access_token);

@@ -309,4 +309,39 @@ function scrollDown() {
     gap: 8px;
     z-index: 2;
 }
+
+@media (max-width: 768px) {
+  .steps-list-container {
+    position: fixed;
+    top: 110px;
+    bottom: 35px;
+    width: 500px;
+    z-index: 2;
+
+    background-color: var(--panel-bg); backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color); border-radius: 12px;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    padding-bottom: 15px; margin-top: 20px;
+  }
+  .page-title { font-size: 18px; font-weight: 700; }
+  .btn-back { 
+    display: flex; align-items: center; gap: 8px;
+    padding-left: 8px; background-color: transparent;
+    color: var(--text-secondary); border: 1px solid var(--border-color);
+    border-radius: 8px; cursor: pointer; transition: all 0.2s;
+    margin-top: 24px; margin-right: 0px; 
+  }
+  .steps-list { 
+    flex-grow: 1; /* 占据所有剩余空间 */
+    overflow-y: auto; /* [关键] 滚动发生在这里 */
+    min-height: 0; 
+  }
+  .step-item {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    padding: 6px;
+  }
+}
 </style>

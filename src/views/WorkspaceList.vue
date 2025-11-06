@@ -1,65 +1,60 @@
 <template>
   <div class="workspace-list-container">
-    <header class="page-header">
+    <!-- 1. 桌面端專屬 Header -->
+    <header class="page-header desktop-view">
       <h1 class="page-title">{{ $t('workspaceList.myWorkspace') }}</h1>
       <button class="btn-create" @click="openCreateModal">
         <el-icon><Plus /></el-icon>
-        <!-- [改造] 在移動端隱藏文字 -->
-        <span class="desktop-only">{{ $t('workspaceList.createNewWorkspace') }}</span>
+        <span>{{ $t('workspaceList.createNewWorkspace') }}</span>
       </button>
     </header>
 
-    <!-- [核心] 骨架屏加載狀態 -->
+    <!-- 2. [新增] 移動端專屬 Header -->
+    <header class="mobile-header mobile-view">
+      <h1 class="mobile-page-title">{{ $t('workspaceList.myWorkspace') }}</h1>
+      <p class="mobile-page-subtitle">{{ $t('workspaceList.manage_workspaces') }}</p>
+    </header>
+
+    <!-- 3. 骨架屏 -->
     <div v-if="isLoading" class="workspace-grid skeleton-grid">
-      <div v-for="i in 12" :key="i" class="workspace-card skeleton-card">
+      <div v-for="i in 8" :key="`skeleton-${i}`" class="workspace-card skeleton-card">
         <div class="skeleton-line title"></div>
         <div class="skeleton-line text"></div>
         <div class="skeleton-line text short"></div>
-        <div class="skeleton-line meta"></div>
       </div>
     </div>
 
-    <!-- 數據加載完成後顯示 -->
+    <!-- 4. 數據加載完成後顯示 -->
     <div v-else class="workspace-grid">
-      <!-- 新建卡片 -->
-      <div class="workspace-card card-new desktop-only" @click="openCreateModal">
+      <!-- 4.1 "新建"卡片 (在移動端也會顯示) -->
+      <div class="workspace-card card-new" @click="openCreateModal">
         <el-icon class="plus-icon"><Plus /></el-icon>
         <h2 class="card-title">{{ $t('workspaceList.createNewWorkspace') }}</h2>
       </div>
 
-      <!-- 工作台卡片列表 -->
+      <!-- 4.2 工作台卡片列表 -->
       <div 
         v-for="ws in workspaces" 
         :key="ws.id" 
         class="workspace-card"
+        @click="goToWorkspace(ws.id)"
       >
-        <!-- 1. 导航区域：只包裹非交互内容 -->
-        <div class="card-navigation-area" @click="goToWorkspace(ws.id)">
-          <div class="card-header">
-            <el-icon class="card-icon"><Collection /></el-icon>
-          </div>
-          
-          <h2 class="card-title">{{ ws.name }}</h2>
-          <p class="card-description">{{ ws.description || 'NULL' }}</p>
-          <div class="card-meta">{{ formatMeta(ws) }}</div>
+        <div class="card-header">
+          <div class="card-icon-wrapper"><el-icon><Collection /></el-icon></div>
+          <el-dropdown class="card-options" trigger="click" @command="handleCommand" @click.stop>
+            <span class="el-dropdown-link"><el-icon><MoreFilled /></el-icon></span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item :command="{ action: 'rename', workspace: ws }"><el-icon><EditPen /></el-icon>{{ $t('workspaceList.rename') }}</el-dropdown-item>
+                <el-dropdown-item :command="{ action: 'delete', workspace: ws }" divided class="delete-item"><el-icon><Delete /></el-icon>{{ $t('workspaceList.delete') }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
-
-        <!-- 2. 交互区域：下拉菜单独立在外 -->
-        <el-dropdown class="card-options" trigger="click" @command="handleCommand">
-          <span class="el-dropdown-link">
-            <el-icon><MoreFilled /></el-icon>
-          </span>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item :command="{ action: 'rename', workspace: ws }">
-                <el-icon><EditPen /></el-icon>{{ $t('workspaceList.rename') }}
-              </el-dropdown-item>
-              <el-dropdown-item :command="{ action: 'delete', workspace: ws }" divided class="delete-item">
-                <el-icon><Delete /></el-icon>{{ $t('workspaceList.delete') }}
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        
+        <h2 class="card-title">{{ ws.name }}</h2>
+        <p class="card-description">{{ ws.description || 'NULL' }}</p>
+        <div class="card-meta">{{ formatMeta(ws) }}</div>
       </div>
     </div>
     
@@ -237,204 +232,91 @@ const handleDelete = (workspace: Workspace) => {
 </script>
 
 <style scoped>
-.workspace-list-container {
-  /* [改造] 給容器一個最小高度，防止移動端內容不足時頁面塌陷 */
-  min-height: 100%;
-}
-.page-header {
-    display: flex; justify-content: space-between;
-    align-items: center; margin-bottom: 30px;
-}
+/* --- 桌面端樣式 --- */
+.workspace-list-container { height: 100%; display: flex; flex-direction: column; }
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-shrink: 0; }
 .page-title { font-size: 32px; font-weight: 700; }
-.btn-create {
-    display: flex; align-items: center; gap: 8px;
-    padding: 10px 16px; background-color: var(--text-primary);
-    color: #11132C; 
-    border: none; border-radius: 8px;
-    font-weight: 700; cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.3s;
-}
-.btn-create:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(240, 242, 245, 0.2);
-}
+.btn-create { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background-color: var(--text-primary); color: #11132C; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: transform 0.2s; }
+.btn-create:hover { transform: translateY(-2px); }
 
 .workspace-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 24px;
-    width: 80%;
-    
-    position: fixed;
-    top: 120px; /* header + filter-bar 高度 + 间距 */
-    bottom: 40px; /* main-content 的 padding-bottom */
-    left: 280px; /* 侧边栏宽度 + main-content 的 padding-left */
-    
-    overflow-y: auto;
-    padding: 5px 20px;
-    z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+  width: 80%;
+  
+  position: fixed;
+  top: 120px; /* header + filter-bar 高度 + 间距 */
+  bottom: 40px; /* main-content 的 padding-bottom */
+  left: 280px; /* 侧边栏宽度 + main-content 的 padding-left */
+  
+  overflow-y: auto;
+  padding: 5px 20px;
+  z-index: 1;
 }
-
-/* [核心] 骨架屏樣式 */
-.skeleton-card {
-  cursor: default;
-  pointer-events: none;
-}
-.skeleton-line {
-  background: linear-gradient(90deg, var(--card-bg) 25%, rgba(45, 48, 102, 0.8) 50%, var(--card-bg) 75%);
-  background-size: 200% 100%;
-  border-radius: 4px;
-  animation: shimmer 1.5s infinite;
-}
+.skeleton-grid { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+.skeleton-card { background-color: var(--card-bg); border-radius: 16px; padding: 24px; }
+.skeleton-line { background: linear-gradient(90deg, var(--card-bg) 25%, rgba(45, 48, 102, 0.8) 50%, var(--card-bg) 75%); background-size: 200% 100%; border-radius: 4px; animation: shimmer 1.5s infinite; }
 .skeleton-line.title { height: 24px; width: 60%; margin-bottom: 12px; }
 .skeleton-line.text { height: 16px; width: 90%; margin-bottom: 8px; }
 .skeleton-line.text.short { width: 70%; }
-.skeleton-line.meta { height: 14px; width: 80%; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 12px; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-/* [核心] 卡片和選項按鈕樣式 */
 .workspace-card {
-    display: flex; /* 让内部元素可以被 flex 控制 */
-    position: relative; /* 为绝对定位的下拉菜单提供上下文 */
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
+    display: flex; flex-direction: column; position: relative;
+    background-color: var(--card-bg); border: 1px solid var(--border-color);
+    border-radius: 16px; /* 增加圓角 */
     transition: all 0.3s;
-    min-height: 200px;
-    max-height: 200px;
-}
-.workspace-card:not(.card-new):hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 20px var(--active-bg);
-    border-color: var(--active-glow);
-}
-
-.workspace-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 20px var(--active-bg);
-    border-color: var(--active-glow);
-}
-
-/* [新增] 导航覆盖层样式 */
-/* [新增] 导航区域样式 */
-.card-navigation-area {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 24px;
-  width: 100%;
-  height: 100%;
-  cursor: pointer;
-}
-
-/* [新增] 内容包装器样式 */
-.card-content-wrapper {
-    position: relative; /* 确保内容在覆盖层之上 */
-    z-index: 2;      /* 层级高于导航覆盖层 */
+    min-height: 220px; /* 給一個最小高度 */
     padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    width: 100%;
-    pointer-events: none; 
-}
-
-.card-options {
-  position: absolute;
-    top: 16px;
-    right: 16px;
-    z-index: 2; /* 确保在最上层 */
-    
-    width: 32px;
-    height: 32px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 50%;
-    color: var(--text-secondary);
     cursor: pointer;
-    transition: background-color 0.2s;
 }
-.card-options:hover {
-  background-color: var(--active-bg);
-  color: var(--text-primary);
-}
-.el-dropdown-link {
-  outline: none; /* 移除點擊時的藍色邊框 */
-  display: flex;
-}
+.workspace-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); border-color: var(--active-glow); }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.card-icon-wrapper { width: 40px; height: 40px; border-radius: 8px; display: flex; justify-content: center; align-items: center; background-color: rgba(88, 94, 227, 0.15); color: #9FA8DA; }
+.card-icon-wrapper .el-icon { font-size: 22px; }
+.card-options { z-index: 2; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; border-radius: 50%; color: var(--text-secondary); cursor: pointer; transition: background-color 0.2s; }
+.card-options:hover { background-color: var(--active-bg); color: var(--text-primary); }
+.card-title { font-size: 18px; font-weight: 600; color: var(--text-primary); margin: 0 0 8px 0; }
+.card-description { font-size: 14px; color: var(--text-secondary); flex-grow: 1; line-height: 1.6; margin: 0; }
+.card-meta { font-size: 13px; color: var(--text-secondary); margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 16px; }
 
-.workspace-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 20px var(--active-bg);
-    border-color: var(--active-glow);
-}
-.card-header { display: flex; justify-content: space-between; align-items: center; }
-.card-icon { font-size: 24px; color: var(--text-secondary); }
-.card-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
-.card-description { font-size: 14px; color: var(--text-secondary); flex-grow: 1; }
-.card-meta {
-    font-size: 12px; color: var(--text-secondary);
-    border-top: 1px solid var(--border-color);
-    padding-top: 12px; 
-    margin-top: auto;
-}
-.card-new {
-    justify-content: center; align-items: center;
-    border-style: dashed; color: var(--text-secondary);
-}
-.card-new .plus-icon { font-size: 48px; margin-bottom: 12px; }
-.card-new .card-title { color: var(--text-secondary); }
-.card-new:hover {
-    color: var(--text-primary); border-color: var(--text-primary);
-    background-color: var(--active-bg);
-}
+.card-new { justify-content: center; align-items: center; border-style: dashed; color: var(--text-secondary); }
+.card-new .plus-icon { font-size: 36px; margin-bottom: 12px; }
+.card-new .card-title { font-size: 16px; font-weight: 500; color: var(--text-secondary); }
+.card-new:hover { color: var(--text-primary); border-color: var(--text-primary); background-color: var(--active-bg); }
 
-/* --- [新增] 響應式樣式 --- */
+/* --- 移動端樣式 --- */
+.mobile-view { display: none; }
+
 @media (max-width: 768px) {
-  /* 1. 調整頁面頭部 */
-  .page-header {
-    margin-bottom: 20px;
-  }
-  .page-title {
-    font-size: 28px;
-  }
-  .btn-create {
-    padding: 10px; /* 變為純圖標按鈕 */
-    border-radius: 50%;
-  }
-  .desktop-only {
-    display: none; /* 隱藏按鈕文字 */
-  }
+  .desktop-view { display: none; }
+  .mobile-view { display: block; }
+  
+  .workspace-list-container { padding: 0 16px; }
+  .page-header.desktop-view { display: none; }
 
-  /* 2. 移除固定佈局，改為正常文檔流 */
+  .mobile-header { padding-top: 16px; margin-bottom: 16px; }
+  .mobile-page-title { font-size: 24px; font-weight: 600; margin: 0; }
+  .mobile-page-subtitle { font-size: 14px; color: var(--text-secondary); margin: 4px 0 0 0; }
+
   .workspace-grid {
     position: static;
+    grid-template-columns: repeat(2, 1fr); /* [核心] 兩列佈局 */
+    gap: 16px;
+    padding: 5px 0px 0px 0px;
+    padding-bottom: 40px;
     width: 100%;
-    overflow-y: visible;
-    padding: 0;
-    
-    /* [核心] 將網格變為單列列表 */
-    grid-template-columns: 1fr;
-    gap: 16px; /* 調整卡片間距 */
   }
-
-  /* 3. 調整卡片樣式以適應列表模式 */
   .workspace-card {
-    min-height: auto; /* 移除最小高度限制 */
-    max-height: none; /* 移除最大高度限制 */
+    padding: 16px;
+    min-height: 190px;
+    border-radius: 16px; /* 確保圓角一致 */
   }
-  .card-navigation-area {
-    padding: 16px; /* 縮小內邊距 */
-  }
-  .card-options {
-    top: 12px;
-    right: 12px;
-  }
+  .card-header { margin-bottom: 12px; }
+  .card-title { font-size: 16px; }
+  .card-description { font-size: 13px; }
+  .card-meta { font-size: 12px; margin-top: 12px; padding-top: 12px; }
 }
 </style>
 <style>

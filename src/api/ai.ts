@@ -157,6 +157,22 @@ export interface GradedExamReport {
   graded_questions: GradedQuestionReport[];
 }
 
+// [新增] 策劃生成器相關的類型定義 (與後端 schemas.py 完全對應)
+export interface GeneratePlanningRequest {
+  plan_type: string;
+  target_audience: string;
+  core_objective: string;
+  tone_style: string;
+  outline: string;
+  word_count?: number;
+  additional_requirements?: string;
+}
+
+export interface PlanningResponse {
+  content: string; // Markdown 格式
+}
+
+
 // --- API 函数 ---
 
 /**
@@ -364,4 +380,20 @@ export const generateExamPaper = (workspaceId: number | string): Promise<ExamPap
 export const gradeExamPaper = (examSessionId: number, data: GradeExamRequest): Promise<GradedExamReport> => {
   // 批改可能更耗時
   return longTimeoutApiClient.post(`/exams/session/${examSessionId}/grade`, data);
+};
+
+/**
+ * [新增] (策劃大師) 根據工作台內容和用戶的結構化需求，生成一份策劃方案
+ */
+export const generatePlanningDocument = (workspaceId: number | string, data: GeneratePlanningRequest): Promise<PlanningResponse> => {
+  // 策劃生成可能非常耗時，務必使用 longTimeoutApiClient
+  return longTimeoutApiClient.post(`/workspaces/${workspaceId}/generate-planning`, data);
+};
+
+/**
+ * [核心新增] (策劃大師 - 通用模式)
+ * 僅根據用戶需求，從零開始生成策劃方案
+ */
+export const generatePlanningFromScratch = (data: GeneratePlanningRequest): Promise<PlanningResponse> => {
+  return longTimeoutApiClient.post(`/plannings/generate-from-scratch`, data);
 };

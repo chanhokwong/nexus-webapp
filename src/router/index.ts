@@ -28,6 +28,8 @@ const ExamReview = () => import('../views/ExamReview.vue');
 // 導入探索工具頁面組件
 const Tools = () => import('../views/Tools.vue');
 const TranslateTools = () => import('../views/TranslateTools.vue')
+const PlanningGenerator = () => import('../views/PlanningGenerator.vue');
+const ContentViewer = () => import('../views/ContentViewer.vue');
 // 導入設置頁面組件
 const Settings = () => import('../views/Settings.vue');
 
@@ -141,6 +143,18 @@ const routes = [
         path: 'tools/translate', 
         name: 'TranslateTools',
         component: TranslateTools,
+      },
+      {
+        path: 'tools/planning-generator',
+        name: 'PlanningGenerator',
+        component: PlanningGenerator,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'tools/content-viewer',
+        name: 'ContentViewer',
+        component: ContentViewer,
+        meta: { requiresAuth: true }
       },
       { path: 'settings',
         name: 'Settings', 

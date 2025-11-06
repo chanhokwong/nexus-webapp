@@ -77,7 +77,12 @@
     "upload_success_msg": "Upload successful!",
     "upload_fail_msg": "Upload failed.",
     "no_avaiable_preview_msg": "There is no available preview link for this file.",
-    "no_any_files": "There are currently no files in the list"
+    "no_any_files": "There are currently no files in the list",
+    "manage_by_tags": "Easily manage your files",
+    "filter": "Filter",
+    "sort_by": "Sorting Method",
+    "filter_options": "Filter options",
+    "ai_summary": "AI Summary"
   },
   "graphReview":{
     "loadKnowledghGraphMsg": "Loading the knowledge graph...",
@@ -123,6 +128,71 @@
     "noFindQuizHistory": "No detailed record found for this quiz.",
     "invalidQuizId": "Invalid quiz ID",
     "loadQuizDetailFail": "Failed to load quiz details"
+  },
+  "chatReview": {
+    "loading": "Loading chat history...",
+    "title": "Chat History Review",
+    "return_history": "Return to history list",
+    "load_fail": "Details not found for this chat history.",
+    "invalid_id": "Invalid chat ID.",
+    "legacy_chat": "This is an older version of the chat history; the conversation cannot continue.",
+    "legacy_chat_warning": "This is an older version of the chat history; it is for viewing only and the conversation cannot continue.",
+    "load_fail_api": "API response format is incomplete."
+  },
+  "clueSheetReview": {
+    "loading": "Loading memory cards...",
+    "title": "Memory Card Review",
+    "return_history": "Return to history list",
+    "not_found": "Detailed record for this memory card set could not be found.",
+    "invalid_id": "Invalid ID",
+    "load_fail": "Failed to load memory card details"
+  },
+  "shortAnswerReview": {
+    "loading": "Loading records...",
+    "title": "Short Answer Review",
+    "return_history": "Return to history list",
+    "from_workspace": "From workspace",
+    "practice_time": "Practice time",
+    "question": "Question",
+    "your_score": "Your score",
+    "your_answer": "Your answer",
+    "ai_feedback": "AI evaluation",
+    "standard_answer": "Reference answer",
+    "load_fail": "Detailed record for this exercise not found.",
+    "invalid_id": "Invalid session ID"
+  },
+  "longAnswerReview": {
+    "loading": "Loading practice history...",
+    "title": "Long Answer Review",
+    "return_history": "Return to history list",
+    "from_workspace": "From workspace",
+    "practice_time": "Practice time",
+    "question": "Question",
+    "overall_score": "Overall score",
+    "marking_scheme": "Marking scheme",
+    "ai_feedback": "AI in-depth evaluation",
+    "your_answer": "Your answer",
+    "standard_answer": "Reference answer",
+    "load_fail": "Detailed record for this practice could not be found.",
+    "invalid_id": "Invalid session ID"
+  },
+  "examReview": {
+    "loading": "Loading the mock exam review...",
+    "completed_at": "Completed at",
+    "from_workspace": "From workspace",
+    "return": "Returned",
+    "total_score": "Total score",
+    "no_overall_feedback": "No overall feedback.",
+    "question": "Question",
+    "points": "Points",
+    "your_answer": "Your answer",
+    "not_answered": "Not answered",
+    "standard_answer": "Standard answer",
+    "no_standard_answer": "No standard answer",
+    "ai_feedback": "AI in-depth review",
+    "no_feedback": "No review",
+    "score": "Score",
+    "load_fail": "Unable to load the history for this mock exam."
   },
   "settings": {
     "title": "Settings",
@@ -196,7 +266,11 @@
     "uploadFailed": "File upload failed, please try again later.",
     "translationCompleted": "Translation completed!",
     "translationFailed": "Translation failed, please try again later.",
-    "page": "Page "
+    "page": "Page ",
+    "original_text": "Original text",
+    "translated_text": "Translation text",
+    "lang_zh": "Chinese",
+    "lang_en": "English"
   },
   "workspaceDetail": {
     "docStore": "Document Store",
@@ -267,7 +341,10 @@
     "gen_short_quiz_title": "Short Answer Quiz Generation",
     "gen_short_quiz_desc": "Test your understanding of concepts and questions",
     "gen_long_quiz_title": "Long Quiz Generation",
-    "gen_long_quiz_desc": "Practice breaking down long questions and answering them."
+    "gen_long_quiz_desc": "Practice breaking down long questions and answering them.",
+    "files_count": "files",
+    "tools_count": "tools",
+    "add_new_doc": "Add New Document"
   },
   "workspaceList": {
     "myWorkspace": "My Workspace",
@@ -296,7 +373,8 @@
     "delConfirm": "Confirm Delete",
     "confirmDel": "Confirm Delete",
     "delSuccess": "Delete successful",
-    "delFail": "Delete failed"
+    "delFail": "Delete failed",
+    "manage_workspaces": "Manage your workspaces and projects"
   },
   "history_setting": {
     "finishOneTest": "Finish a test",
@@ -319,5 +397,55 @@
     "correctAnsMsg2": "(Correct)",
     "wrongAnsMsg": "(Incorrect) | Correct answer:",
     "requiz": "Retake the quiz"
+  },
+  "planning": {
+    "title": "Guided Plan Generator",
+    "description": "Answer a few simple questions, and let AI craft a professional plan tailored for you based on your learning materials.",
+    "step1_title": "Plan Type",
+    "step1_question": "What type of plan would you like to generate?",
+    "step2_title": "Goal & Style",
+    "step2_question_audience": "Who is the primary audience for this plan?",
+    "step2_question_objective": "What is the core objective you want to achieve with this plan?",
+    "step3_title": "Details",
+    "step3_question_tone": "What is the desired tone of voice?",
+    "step3_question_extra": "Are there any additional formatting or content requirements?",
+    "step4_title": "Select Knowledge Source",
+    "step4_question_workspace": "Please select a workspace as the AI's knowledge source",
+    "generate": "Generate Plan",
+    "resultTitle": "{type} - Generated Result",
+    "unnamedPlan": "Unnamed Plan",
+    "step3_title_new": "Outline",
+    "step5_title": "Knowledge Source", 
+    "step3_question_outline": "Please provide the content outline for the plan",
+    "step3_placeholder_outline": "Optional. Provide a clear outline, and the AI will strictly follow your structure to fill in the content.\nExample:\n1. Introduction\n   a. Research Background\n   b. Research Questions\n2. Literature Review\n3. Data Analysis\n4. Conclusion",
+    "step3_placeholder_extra": "Optional. E.g., must include specific data charts, cite no less than three references, etc.",
+    "step4_title_new": "Length",
+    "step5_title_new": "Style",
+    "step6_title": "Knowledge Source",
+    "step4_question_word_count": "What is the approximate total word count you expect for the report?",
+    "saveDisabledTooltip": "This plan was not generated from a specific workspace and cannot be saved as a note directly.",
+    "step4_description": "The AI will analyze all documents within this workspace to generate your plan. You can also choose not to use any workspace.",
+    "selectWorkspacePlaceholder": "Select a workspace (Optional)",
+    "noWorkspaceOption": "Don't use any workspace (Use AI's general knowledge)",
+    "outlineRequiredError": "Please fill in the content outline to proceed.",
+    "purposeRequiredError": "Please enter the core objective to continue to the next step."
+  },
+  "common": {
+    "back": "Back",
+    "copy": "Copy Content",
+    "saveAsNote": "Save as Note",
+    "copiedSuccess": "Successfully copied to clipboard!",
+    "copiedFailed": "Copy failed, please copy manually.",
+    "savedSuccess": "Successfully saved as a note!",
+    "savedFailed": "Save failed, please try again.",
+    "previous_step": "Previous",
+    "next_step": "Next",
+    "optional": "Optional",
+    "wordCount": "Word Count: {count}",
+    "done": "executed"
+  },
+  "errors": {
+    "fetchWorkspacesFailed": "Failed to fetch workspace list. Please refresh the page.",
+    "generationFailed": "Generation failed. Please check your inputs and try again."
   }
 }

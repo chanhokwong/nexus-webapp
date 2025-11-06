@@ -337,4 +337,124 @@ const retryCurrentQuestion = () => {
   animation: spin 1s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- [核心美化] 移動端樣式 --- */
+@media (max-width: 768px) {
+  /* --- 答题阶段 --- */
+  .answering-phase {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 100%;
+  }
+
+  .question-area {
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .question-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+  .question-text {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.6;
+  }
+  .answer-textarea {
+    flex-grow: 1; /* 占据大部分剩余空间 */
+    min-height: 200px;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 15px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.7;
+    outline: none;
+    resize: vertical;
+    transition: border-color 0.3s;
+  }
+  .answer-textarea:focus {
+    border-color: var(--active-glow);
+  }
+  .btn-submit {
+    align-self: flex-end; /* 按钮靠右 */
+    padding: 12px 24px;
+    background-color: var(--active-glow);
+    border: none;
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .loading-state, .empty-state {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    height: 100%;
+    color: var(--text-secondary);
+    position: fixed;
+    top: 20px;
+    left: 200px;
+  }
+  /* --- 结果展示阶段 --- */
+  .results-phase {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .result-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .result-card h3 {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .result-card p,
+  .result-card :deep(.markdown-body) {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-primary);
+  }
+
+  .score-card {
+    text-align: center;
+    padding: 24px;
+    border-color: var(--active-glow);
+  }
+  .score-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 0px;
+  }
+  .score-value {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--active-glow);
+  }
+
+  .result-actions {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 0px;
+  }
+}
 </style>

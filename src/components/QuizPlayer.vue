@@ -368,4 +368,96 @@ const restartQuiz = () => {
   background-color: rgba(244, 67, 54, 0.1);
   color: #ef9a9a;
 }
+
+/* --- [核心美化] 移動端樣式 --- */
+@media (max-width: 768px) {
+  .question-text {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.6;
+    margin-bottom: 15px;
+  }
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr; /* 单列布局 */
+    gap: 6px;
+  }
+  .option-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 80%;
+    padding: 14px 20px;
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .option-text {
+    /* 允许文本换行 */
+    white-space: normal;
+    text-align: left;
+  }
+  /* --- 测验总结回顾 --- */
+  .quiz-summary {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .summary-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .summary-score {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .summary-details {
+    flex-grow: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 10px;
+  }
+  .summary-item {
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(88, 94, 227, 0.1);
+  }
+  .summary-question {
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 5px;
+  }
+  .summary-answer {
+    padding-left: 15px;
+    font-size: 12px;
+  }
+  .summary-answer.correct {
+    color: #a5d6a7; /* 绿色 */
+    border-left: 3px solid #4caf50;
+  }
+  .summary-answer.incorrect {
+    color: #ef9a9a; /* 红色 */
+    border-left: 3px solid #f44336;
+  }
+  .quiz-summary button {
+    margin-top: 20px;
+    align-self: center;
+  }
+}
 </style>

@@ -279,3 +279,37 @@ const isIncorrect = (option: string, attempt: QuizAttempt) => {
   font-size: 20px;
 }
 </style>
+
+<style>
+/* --- [核心最终修正] 全局自定义滚动条样式 --- */
+
+/* 
+  我们为所有可能出现滚动条的 `.main-content` 区域
+  以及其内部的元素定义统一的滚动条样式
+*/
+.main-content ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px; /* 同时美化水平滚动条 */
+}
+
+.main-content ::-webkit-scrollbar-track {
+  /* 轨道背景：设置为透明 */
+  background: transparent;
+}
+
+.main-content ::-webkit-scrollbar-thumb {
+  /* 滑块本身 */
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  
+  /* 添加一个最小高度，防止滑块变得过小 */
+  min-height: 30px;
+}
+
+.main-content ::-webkit-scrollbar-thumb:hover {
+  /* 鼠标悬停在滑块上时 */
+  background-color: rgba(255, 255, 255, 0.4);
+}
+</style>

@@ -1,10 +1,13 @@
 <template>
   <div class="files-container">
-    <header class="page-header">
-      <h1 class="page-title desktop-view">{{ $t('files.title') }}</h1>
-      <button class="btn-upload desktop-view" @click="isUploadModalVisible = true">
+    <!-- =================================================== -->
+    <!-- 1. 桌面端專屬 Header 和功能欄                       -->
+    <!-- =================================================== -->
+    <header class="page-header desktop-view">
+      <h1 class="page-title">{{ $t('files.title') }}</h1>
+      <button class="btn-upload" @click="isUploadModalVisible = true">
         <el-icon><Upload /></el-icon>
-        <span class="desktop-only">{{ $t('files.upload_button') }}</span>
+        <span>{{ $t('files.upload_button') }}</span>
       </button>
     </header>
 
@@ -13,7 +16,7 @@
         <el-icon class="search-icon"><Search /></el-icon>
         <input type="search" class="filter-input" :placeholder="searchPlaceholder" v-model="searchQuery">
       </div>
-      <div class="sort-options desktop-only">
+      <div class="sort-options">
         <el-select 
           v-model="sortBy" 
           class="filter-select" 
@@ -26,9 +29,39 @@
       </div>
     </div>
 
+    <!-- =================================================== -->
+    <!-- 2. 移動端專屬 Header 和功能欄                       -->
+    <!-- =================================================== -->
+    <header class="mobile-header mobile-view">
+      <h1 class="mobile-page-title">{{ $t('files.title') }}</h1>
+      <p class="mobile-page-subtitle">{{ $t('files.manage_by_tags') }}</p>
+    </header>
+    
+    <div class="mobile-function-bar mobile-view">
+      <div class="search-wrapper">
+        <el-icon class="search-icon"><Search /></el-icon>
+        <input type="search" class="filter-input" :placeholder="searchPlaceholder" v-model="searchQuery">
+      </div>
+      <div class="mobile-actions">
+        <!-- [功能已綁定] -->
+        <button class="filter-btn" @click="isFilterModalVisible = true">
+          <el-icon><Filter /></el-icon><span>{{ $t('files.filter') }}</span>
+        </button>
+        <div class="view-toggle">
+          <!-- [功能已綁定] -->
+          <button class="toggle-btn" :class="{ active: viewMode === 'card' }" @click="viewMode = 'card'"><el-icon><Grid /></el-icon></button>
+          <button class="toggle-btn" :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'"><el-icon><Memo /></el-icon></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =================================================== -->
+    <!-- 3. 文件列表面板 (包含桌面和移動端視圖)          -->
+    <!-- =================================================== -->
     <div class="file-list-panel">
-      <!-- 1. 桌面端：显示表格 (默认显示) -->
-      <div class="table-wrapper desktop-view">
+      
+      <!-- 3.1 桌面端表格視圖 -->
+      <div class="table-body-wrapper desktop-view" ref="scrollContainerRef" @scroll="updateScrollButtons">
         <table class="file-table">
           <thead>
             <tr>
@@ -39,11 +72,6 @@
               <th>{{ $t('files.actions') }}</th>
             </tr>
           </thead>
-        </table>
-      </div>
-      <!-- 2. 独立的、可滚动的内容区域 -->
-      <div class="table-body-wrapper desktop-view" ref="scrollContainerRef" @scroll="updateScrollButtons">
-        <table class="file-table">
           <tbody>
             <tr v-if="isLoading">
               <td colspan="5" class="loading-state">{{ $t('files.load_data') }}</td>
@@ -58,16 +86,13 @@
                   <span>{{ file.filename }}</span>
                 </div>
               </td>
-              <!-- [核心] 添加默认值 -->
               <td><span class="pill" :class="file.file_type.toLowerCase()">{{ file.file_type }}</span></td>
               <td>{{ file.size_mb.toFixed(2) }}MB</td>
               <td><div class="summary-cell">{{ file.ai_summary || 'NULL' }}</div></td>
               <td>
                 <div class="action-buttons">
                   <a :href="file.url" :download="file.filename" target="_blank" rel="noopener noreferrer" @click.stop>
-                    <button :title="downloadText" class="action-btn">
-                      <el-icon><Download /></el-icon>
-                    </button>
+                    <button :title="downloadText" class="action-btn"><el-icon><Download /></el-icon></button>
                   </a>
                   <button :title="deleteText" class="action-btn" @click.stop="handleDelete(file)"><el-icon><Delete /></el-icon></button>
                   <button :title="moreText" class="action-btn"><el-icon><MoreFilled /></el-icon></button>
@@ -78,37 +103,69 @@
         </table>
       </div>
 
-      <!-- 2. 移动端：显示卡片列表 (默认隐藏) -->
+      <!-- 3.2 移動端視圖 -->
       <div class="card-list-wrapper mobile-view">
-        <div v-if="isLoading" class="loading-state">{{ $t('files.no_any_files') }}</div>
-        <div v-else-if="filteredAndSortedFiles.length === 0" class="empty-state">...</div>
-        <div 
-          v-for="file in filteredAndSortedFiles" 
-          :key="file.id" 
-          class="file-card"
-          @click="previewFile(file)"
-        >
-          <div class="card-main">
-            <div class="file-info">
-              <el-icon class="file-icon"><Document /></el-icon>
-              <span class="file-name">{{ file.filename }}</span>
-            </div>
-            <div class="action-buttons">
-              <a :href="file.url" :download="file.filename" target="_blank" @click.stop>
-                <button title="下載" class="action-btn"><el-icon><Download /></el-icon></button>
-              </a>
-              <button title="刪除" class="action-btn" @click.stop="handleDelete(file)"><el-icon><Delete /></el-icon></button>
+        <div v-if="isLoading" class="loading-state">{{ $t('files.load_data') }}</div>
+        <div v-else-if="filteredAndSortedFiles.length === 0" class="empty-state">{{ $t('files.no_files') }}</div>
+        
+        <template v-else>
+          <!-- 3.2.1 卡片模式 (Card Mode) -->
+          <div v-if="viewMode === 'card'">
+            <div v-for="file in filteredAndSortedFiles" :key="`card-${file.id}`" class="file-card" @click="previewFile(file)">
+              <div class="card-header">
+                <div class="file-icon-wrapper" :class="`type-${file.file_type.toLowerCase()}`">
+                  <el-icon><Document /></el-icon>
+                </div>
+                <div class="file-name-meta">
+                  <span class="file-name">{{ file.filename }}</span>
+                  <div class="meta-line">
+                    <span class="pill" :class="file.file_type.toLowerCase()">{{ file.file_type }}</span>
+                    <span class="file-size">{{ file.size_mb.toFixed(2) }}MB</span>
+                  </div>
+                </div>
+              </div>
+              <div v-if="file.ai_summary" class="ai-summary-box">
+                <div class="summary-title">
+                  <el-icon><MagicStick /></el-icon>
+                  <span>{{ $t('files.ai_summary') }}</span>
+                </div>
+                <p class="summary-text">{{ file.ai_summary }}</p>
+              </div>
+              <div class="card-footer">
+                <div class="action-buttons">
+                  <a :href="file.url" :download="file.filename" target="_blank" @click.stop>
+                    <button :title="downloadText" class="action-btn"><el-icon><Download /></el-icon></button>
+                  </a>
+                  <button :title="$t('files.share')" class="action-btn"><el-icon><Share /></el-icon></button>
+                  <button :title="moreText" class="action-btn"><el-icon><MoreFilled /></el-icon></button>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="card-details">
-            <span class="pill" :class="file.file_type.toLowerCase()">{{ file.file_type }}</span>
-            <span class="file-size">{{ file.size_mb.toFixed(2) }}MB</span>
+          
+          <!-- 3.2.2 列表模式 (List Mode) -->
+          <div v-else-if="viewMode === 'list'" class="file-list-view">
+             <div v-for="file in filteredAndSortedFiles" :key="`list-${file.id}`" class="file-list-item" @click="previewFile(file)">
+              <div class="file-icon-wrapper small" :class="`type-${file.file_type.toLowerCase()}`">
+                <el-icon><Document /></el-icon>
+              </div>
+              <div class="file-name-meta">
+                <span class="file-name">{{ file.filename }}</span>
+                <div class="meta-line">
+                  <span class="pill small" :class="file.file_type.toLowerCase()">{{ file.file_type }}</span>
+                  <span class="file-size">{{ file.size_mb.toFixed(2) }}MB</span>
+                </div>
+              </div>
+              <button class="action-btn" @click.stop="handleDelete(file)">
+                <el-icon><Delete /></el-icon>
+              </button>
+            </div>
           </div>
-          <p v-if="file.ai_summary" class="summary-text">{{ file.ai_summary }}</p>
-        </div>
+        </template>
       </div>
 
-      <div class="scroll-controls" v-show="canScroll">
+      <!-- 3.3 桌面端滾動按鈕 -->
+      <div class="scroll-controls desktop-view" v-show="canScroll">
         <button class="scroll-btn" @click="scrollUp" :disabled="!canScrollUp" title="向上滾動">
           <el-icon><ArrowUp /></el-icon>
         </button>
@@ -117,9 +174,21 @@
         </button>
       </div>
     </div>
+    
+    <!-- =================================================== -->
+    <!-- 4. 移動端懸浮操作按鈕 (FAB)                     -->
+    <!-- =================================================== -->
+    <button class="fab-upload mobile-view" @click="isUploadModalVisible = true">
+      <el-icon><Plus /></el-icon>
+      <span>{{ $t('files.upload_button') }}</span>
+    </button>
   </div>
 
-  <!-- [核心] 新增文件上传的弹窗 -->
+  <!-- =================================================== -->
+  <!-- 5. 彈窗 (Modals / Dialogs)                        -->
+  <!-- =================================================== -->
+  
+  <!-- 上傳文件彈窗 -->
   <el-dialog
     v-model="isUploadModalVisible"
     :title="uploadNewFile"
@@ -137,48 +206,53 @@
       :limit="1"
     >
       <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-      <div class="el-upload__text">
-        {{ $t('files.upload_msg1') }} <em>{{ $t('files.upload_msg2') }}</em>
-      </div>
+      <div class="el-upload__text">{{ $t('files.upload_msg1') }} <em>{{ $t('files.upload_msg2') }}</em></div>
       <template #tip>
-        <div class="el-upload__tip">
-          {{ $t('files.upload_msg3') }}
-        </div>
+        <div class="el-upload__tip">{{ $t('files.upload_msg3') }}</div>
       </template>
     </el-upload>
   </el-dialog>
 
-  <!-- [核心] 新增文件预览弹窗 -->
+  <!-- 文件預覽彈窗 -->
   <el-dialog 
-  v-model="isPreviewModalVisible" 
-  :title="previewingFile?.filename" 
-  width="80%" 
-  top="5vh"
-  destroy-on-close
-  :modal-class="'nexus-dialog-modal'" 
-  class="nexus-dialog preview-dialog"
->
-  <!-- 
-    只有在 previewingFile 和 url 都存在时才渲染 iframe，
-    这可以防止在弹窗打开的瞬间加载一个空的 src。
-  -->
-  <iframe 
-    v-if="previewingFile?.url"
-    :src="previewingFile.url"
-    class="preview-iframe"
-    frameborder="0"
-  ></iframe>
-  <div v-else class="preview-loading">
-    {{ $t('files.preview_load') }}
-  </div>
-</el-dialog>
+    v-model="isPreviewModalVisible" 
+    :title="previewingFile?.filename" 
+    width="80%" 
+    top="5vh"
+    destroy-on-close
+    :modal-class="'nexus-dialog-modal'" 
+    class="nexus-dialog preview-dialog"
+  >
+    <iframe v-if="previewingFile?.url" :src="previewingFile.url" class="preview-iframe" frameborder="0"></iframe>
+    <div v-else class="preview-loading">{{ $t('files.preview_load') }}</div>
+  </el-dialog>
 
+  <!-- 移動端篩選彈窗 -->
+  <el-dialog
+    v-model="isFilterModalVisible"
+    :title="$t('files.filter_options')"
+    width="90%"
+    top="20vh"
+    :modal-class="'nexus-dialog-modal'"
+    class="nexus-dialog filter-dialog"
+  >
+    <div class="filter-modal-content">
+      <p class="filter-group-title">{{ $t('files.sort_by') }}</p>
+      <el-radio-group v-model="sortBy" class="sort-radio-group">
+        <el-radio-button :label="'date'">{{ sortByUpdate }}</el-radio-button>
+        <el-radio-button :label="'name'">{{ sortByName }}</el-radio-button>
+      </el-radio-group>
+    </div>
+    <template #footer>
+      <button class="btn btn-confirm" @click="isFilterModalVisible = false">{{ $t('common.done') }}</button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
-import { ElMessage, ElMessageBox, ElDialog, ElUpload, ElSelect, ElOption } from 'element-plus';
-import { Upload, Search, Document, Download, Delete, MoreFilled, UploadFilled, ArrowUp, ArrowDown } from '@element-plus/icons-vue';
+import { ElMessage, ElMessageBox, ElDialog, ElUpload, ElSelect, ElOption, ElRadioGroup, ElRadioButton } from 'element-plus';
+import { Upload, Search, Document, Download, Delete, MoreFilled, UploadFilled, ArrowUp, ArrowDown, Plus, Filter, Grid, Memo, MagicStick, Share } from '@element-plus/icons-vue';
 import { getAllUserDocuments, deleteDocument, uploadDocument, type DocumentInfo } from '../api/documents';
 import { useI18n } from 'vue-i18n';
 
@@ -212,6 +286,10 @@ const isLoading = ref(true);
 const searchQuery = ref('');
 const sortBy = ref('date'); // 'date' or 'name'
 const isUploadModalVisible = ref(false);
+
+// 移動端交互狀態
+const isFilterModalVisible = ref(false);
+const viewMode = ref<'card' | 'list'>('card'); // 默認為卡片視圖
 
 // --- [核心] 预览相关状态 ---
 const isPreviewModalVisible = ref(false);
@@ -673,111 +751,121 @@ tr:hover .action-buttons {
     cursor: not-allowed;
 }
 
-/* --- [核心最终修正] 在文件末尾添加响应式样式 --- */
-
-/* 默认情况下，移动端视图是隐藏的 */
-.mobile-view {
-  display: none;
-}
+/* --- [核心美化] 移動端樣式 (Mobile-First) --- */
+.mobile-view { display: none; }
 
 @media (max-width: 768px) {
-  /* 当屏幕宽度小于 768px 时 */
+  .desktop-view, .desktop-only { display: none; }
+  .mobile-view { display: block; }
+  .files-container { display: flex; flex-direction: column; height: 100%; padding: 0 16px; }
+  
+  .mobile-header, .mobile-function-bar { flex-shrink: 0; }
+  .mobile-header { padding-top: 16px; }
+  .mobile-page-title { font-size: 24px; font-weight: 600; margin: 0; }
+  .mobile-page-subtitle { font-size: 14px; color: var(--text-secondary); margin: 4px 0 16px 0; }
+  
+  .mobile-function-bar { margin-bottom: 16px; }
+  .search-wrapper { margin-bottom: 12px; }
+  .filter-input { border-radius: 20px; padding: 10px 16px 10px 40px; backdrop-filter: blur(5px); }
+  .search-wrapper .search-icon { left: 16px; }
 
-  /* 1. 切换视图：隐藏桌面，显示移动 */
-  .desktop-view, .desktop-only {
-    display: none;
-  }
-  .mobile-view {
-    display: block;
-    height: 100%;
-    overflow-y: auto;
-    padding: 16px;
-  }
+  .mobile-actions { display: flex; justify-content: space-between; align-items: center; }
+  .filter-btn { display: flex; align-items: center; gap: 6px; background-color: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 20px; color: var(--text-primary); padding: 8px 16px; font-size: 14px; }
+  .view-toggle { display: flex; background-color: var(--panel-bg); border-radius: 8px; padding: 4px; }
+  .toggle-btn { background: transparent; border: none; color: var(--text-secondary); padding: 6px 10px; border-radius: 6px; }
+  .toggle-btn.active { background-color: var(--active-bg); color: var(--text-primary); }
 
-  /* 2. 调整页面布局 */
-  .page-header {
-    margin-bottom: 20px;
+  .file-list-panel { position: static; flex-grow: 1; min-height: 0; padding: 0; background: none; border: none; backdrop-filter: none; }
+  .card-list-wrapper { height: 100%; overflow-y: auto; padding-bottom: 80px; }
+
+  /* [新增] 列表視圖樣式 */
+  .file-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
   }
-  .page-title {
-    font-size: 28px;
+  .file-list-item .file-icon-wrapper.small {
+    width: 36px; height: 36px;
   }
-  .btn-upload {
-    padding: 8px; /* 变为纯图标按钮 */
+  .file-list-item .file-name-meta {
+    flex-grow: 1;
+  }
+  .file-list-item .pill.small {
+    padding: 2px 8px;
+    font-size: 10px;
+  }
+  .file-list-item .action-btn { 
+    background: none; 
+    border: none; 
+    color: var(--text-secondary); 
+    cursor: pointer; 
+    padding: 4px; 
     border-radius: 50%;
+    display: flex;  
   }
 
-  .function-bar {
-    margin-bottom: 20px;
+  /* [新增] 篩選彈窗樣式 */
+  .filter-modal-content {
+    padding: 0 10px;
   }
-  
-  .file-list-panel {
-    /* 移除 fixed 布局 */
-    position: static;
-    flex-grow: 1; /* 让它占满剩余空间 */
-    padding: 0;
+  .filter-group-title {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
   }
-  
-  /* 3. 移动端卡片样式 */
-  .file-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 16px;
+  .sort-radio-group {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    width: 100%;
   }
-  .card-main {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  .sort-radio-group :deep(.el-radio-button) {
+    flex-grow: 1;
   }
-  .file-info { /* 复用桌面版样式 */
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  .sort-radio-group :deep(.el-radio-button__inner) {
+    width: 100%;
+    background: transparent;
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+    box-shadow: none !important;
+  }
+  .sort-radio-group :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+    background-color: var(--active-bg);
+    border-color: var(--active-glow);
+    color: var(--text-primary);
+  }
+  .btn.btn-confirm {
+    width: 100%;
+    background-color: var(--active-glow);
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
     font-weight: 500;
   }
-  .file-icon { font-size: 24px; color: var(--text-secondary); }
-  .file-name {
-    /* 防止文件名过长破坏布局 */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
 
-  .action-buttons { /* 复用桌面版样式 */
-    display: flex;
-    gap: 8px;
-  }
-
-  .card-details {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .file-size {
-    font-size: 12px;
-    color: var(--text-secondary);
-  }
-
-  .summary-text {
-    font-size: 13px;
-    color: var(--text-secondary);
-    line-height: 1.6;
-    /* 多行文本省略 */
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-  }
+  .file-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .card-header { display: flex; gap: 12px; align-items: flex-start; }
+  .file-icon-wrapper { width: 40px; height: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
+  .file-icon-wrapper.type-pdf { background-color: rgba(255, 82, 82, 0.2); color: #ff8a80; }
+  .file-icon-wrapper.type-txt { background-color: rgba(64, 196, 255, 0.2); color: #80d8ff; }
+  .file-icon-wrapper.type-docx { background-color: rgba(41, 98, 255, 0.2); color: #82b1ff; }
   
-  .card-list-wrapper {
-    padding-bottom: 50px;
-  }
+  .file-name-meta { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .file-name { font-weight: 500; line-height: 1.4; color: var(--text-primary); }
+  .meta-line { display: flex; align-items: center; gap: 8px; }
+  .file-size { font-size: 12px; color: var(--text-secondary); }
+  
+  .ai-summary-box { background-color: rgba(0,0,0,0.2); border-radius: 12px; padding: 12px; }
+  .summary-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px; }
+  .summary-title .el-icon { color: #FFD700; }
+  .summary-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin: 0; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  
+  .card-footer { display: flex; justify-content: flex-end; }
+  
+  .fab-upload { position: fixed; bottom: 80px; right: 24px; z-index: 10; display: flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 24px; border: none; background: linear-gradient(90deg, #8A2BE2, #4A00E0); color: white; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 8px 25px rgba(74, 0, 224, 0.4); transition: all 0.3s ease; }
+  .fab-upload:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(74, 0, 224, 0.5); }
 }
 </style>
 

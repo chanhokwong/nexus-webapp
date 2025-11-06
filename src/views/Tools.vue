@@ -18,7 +18,6 @@
       <div 
         class="tool-grid" 
         ref="scrollContainerRef" 
-        @scroll="updateScrollButtons"
       >
         <div 
           v-for="tool in filteredTools" 
@@ -40,21 +39,12 @@
         </div>
       </div>
 
-      <!-- [新增] 上下滑动按钮 -->
-      <div class="scroll-controls" v-show="canScroll">
-        <button class="scroll-btn" @click="scrollUp" :disabled="!canScrollUp" :title="$t('common.scroll_up')">
-          <el-icon><ArrowUp /></el-icon>
-        </button>
-        <button class="scroll-btn" @click="scrollDown" :disabled="!canScrollDown" :title="$t('common.scroll_down')">
-          <el-icon><ArrowDown /></el-icon>
-        </button>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, onUpdated } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 // 导入所有需要的图标
@@ -79,7 +69,6 @@ const pomodoroDescribe = computed(() => t('tools.pomodoroDescribe'));
 const pomodoroUnableUse = computed(() => t('tools.pomodoroUnableUse'));
 const planGeneration = computed(() => t('tools.planGeneration'));
 const planGenerationDescribe = computed(() => t('tools.planGenerationDescribe'));
-const planGenerationUnableUse = computed(() => t('tools.planGenerationUnableUse'));
 const dataExtract = computed(() => t('tools.dataExtract'));
 const dataExtractDescribe = computed(() => t('tools.dataExtractDescribe'));
 const dataExtractUnableUse = computed(() => t('tools.dataExtractUnableUse'));
@@ -122,6 +111,13 @@ const allTools = ref<Tool[]>([
     action: () => router.push({ name: 'TranslateTools' })
   },
   { 
+    id: 'plan-generation', title: planGeneration.value, description: planGenerationDescribe.value, 
+    icon: MagicStick, category: 'generation',
+    color: '#BA68C8', bgColor: 'rgba(186, 104, 200, 0.1)',
+    disabled: false,
+    action: () => router.push({ name: 'PlanningGenerator' })
+  },
+  { 
     id: 'pomodoro-clock', title: pomodoro.value, description: pomodoroDescribe.value, 
     icon: AlarmClock, category: 'productivity',
     color: '#FFB74D', bgColor: 'rgba(255, 183, 77, 0.1)',
@@ -132,13 +128,6 @@ const allTools = ref<Tool[]>([
     }
   },
   { 
-    id: 'plan-generation', title: planGeneration.value, description: planGenerationDescribe.value, 
-    icon: MagicStick, category: 'generation',
-    color: '#BA68C8', bgColor: 'rgba(186, 104, 200, 0.1)',
-    disabled: true, badge: comingSoon.value,
-    action: () => ElMessage.info(planGenerationUnableUse.value)
-  },
-  { 
     id: 'datasheet-extraction', title: dataExtract.value, description: dataExtractDescribe.value, 
     icon: DocumentCopy, category: 'extraction',
     color: '#4DB6AC', bgColor: 'rgba(77, 182, 172, 0.1)',
@@ -147,12 +136,6 @@ const allTools = ref<Tool[]>([
   },
 ]);
 
-// --- [新增] 滾動相關狀態 ---
-const scrollContainerRef = ref<HTMLElement | null>(null);
-const canScroll = ref(false);
-const canScrollUp = ref(false);
-const canScrollDown = ref(false);
-let resizeObserver: ResizeObserver | null = null;
 
 // --- 2. 交互逻辑 ---
 const filteredTools = computed(() => {
@@ -170,53 +153,6 @@ const handleToolClick = (tool: Tool) => {
   tool.action(); // 执行工具定义好的动作
 };
 
-// --- [新增] 滾動邏輯 ---
-function updateScrollButtons() {
-  const el = scrollContainerRef.value;
-  if (!el) return;
-
-  const hasScrollbar = el.scrollHeight > el.clientHeight;
-  canScroll.value = hasScrollbar;
-
-  if (hasScrollbar) {
-    canScrollUp.value = el.scrollTop > 5; // 給一點緩衝區
-    canScrollDown.value = el.scrollTop + el.clientHeight < el.scrollHeight - 5;
-  } else {
-    canScrollUp.value = false;
-    canScrollDown.value = false;
-  }
-}
-
-function scrollUp() {
-  scrollContainerRef.value?.scrollBy({ top: -300, behavior: 'smooth' });
-}
-
-function scrollDown() {
-  scrollContainerRef.value?.scrollBy({ top: 300, behavior: 'smooth' });
-}
-
-// --- [新增] 生命周期鉤子 ---
-onMounted(() => {
-  const el = scrollContainerRef.value;
-  if (el) {
-    // 監聽尺寸變化
-    resizeObserver = new ResizeObserver(updateScrollButtons);
-    resizeObserver.observe(el);
-    // 初次檢查
-    updateScrollButtons();
-  }
-});
-
-onUnmounted(() => {
-  if (resizeObserver && scrollContainerRef.value) {
-    resizeObserver.unobserve(scrollContainerRef.value);
-  }
-});
-
-// 當篩選列表更新後，DOM 需要時間渲染，然後我們再檢查滾動狀態
-onUpdated(() => {
-  updateScrollButtons();
-});
 </script>
 
 <style scoped>
@@ -274,7 +210,7 @@ onUpdated(() => {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 24px;
-    padding-right: 10px; /* 為滾動條留出空間，防止內容遮擋 */
+    padding: 5px 0px 0px 0px;
 }
 .tool-card {
     display: flex;
@@ -389,5 +325,39 @@ onUpdated(() => {
     grid-template-columns: 1fr; /* 單列佈局 */
     gap: 16px; /* 調整卡片間距 */
   }
+}
+</style>
+
+<style>
+/* --- [核心最终修正] 全局自定义滚动条样式 --- */
+
+/* 
+  我们为所有可能出现滚动条的 `.main-content` 区域
+  以及其内部的元素定义统一的滚动条样式
+*/
+.main-content ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px; /* 同时美化水平滚动条 */
+}
+
+.main-content ::-webkit-scrollbar-track {
+  /* 轨道背景：设置为透明 */
+  background: transparent;
+}
+
+.main-content ::-webkit-scrollbar-thumb {
+  /* 滑块本身 */
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  
+  /* 添加一个最小高度，防止滑块变得过小 */
+  min-height: 30px;
+}
+
+.main-content ::-webkit-scrollbar-thumb:hover {
+  /* 鼠标悬停在滑块上时 */
+  background-color: rgba(255, 255, 255, 0.4);
 }
 </style>

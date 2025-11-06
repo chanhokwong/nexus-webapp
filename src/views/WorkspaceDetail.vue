@@ -1,190 +1,184 @@
 <template>
-  <!-- [核心] 骨架屏加载状态 -->
+  <!-- 骨架屏加载状态 -->
   <div v-if="isLoading" class="workspace-skeleton">
     <div class="skeleton-header">
       <div class="skeleton-line title"></div>
       <div class="skeleton-line text"></div>
     </div>
     <div class="collaboration-canvas">
-      <div class="canvas-panel skeleton-panel" v-for="i in 3" :key="i"></div>
+      <div class="canvas-panel skeleton-panel" v-for="i in 3" :key="`skeleton-${i}`"></div>
     </div>
   </div>
   
-  <!-- 数据加载完成后显示 -->
   <div v-else-if="workspace" class="workspace-detail-container">
+    <!-- 1. 頁面頭部 -->
     <header class="page-header">
       <h1 class="page-title">{{ workspace.name }}</h1>
       <p class="page-description">{{ workspace.description }}</p>
     </header>
 
-    <div class="collaboration-canvas">
-      <!-- 第一栏：文件库 -->
+    <!-- =================================================== -->
+    <!-- 2. 桌面端三欄佈局 (僅在桌面端顯示)                  -->
+    <!-- =================================================== -->
+    <div class="collaboration-canvas desktop-view">
+      <!-- 2.1 文件庫 -->
       <div class="canvas-panel">
         <div class="panel-header">
-        <h2 class="panel-title">{{ $t('workspaceDetail.docStore') }}</h2>
-
-        <!-- [核心] 将按钮改造为下拉菜单 -->
-        <el-dropdown trigger="click" @command="handleFileCommand">
-          <button class="add-btn" :title="addFile">
-            <el-icon><Plus /></el-icon>
-          </button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <!-- [核心] 添加图标 -->
-              <el-dropdown-item command="upload">
-                <el-icon><Upload /></el-icon>
-                <span>{{ $t('workspaceDetail.uploadAndAddDoc') }}</span> <!-- 优化文本 -->
-              </el-dropdown-item>
-              <el-dropdown-item command="add_existing">
-                <el-icon><FolderAdd /></el-icon>
-                <span>{{ $t('workspaceDetail.uploadAtExitDoc') }}</span> <!-- 优化文本 -->
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-      </div>
+          <h2 class="panel-title">{{ $t('workspaceDetail.docStore') }}</h2>
+          <el-dropdown trigger="click" @command="handleFileCommand">
+            <button class="add-btn" :title="addFile"><el-icon><Plus /></el-icon></button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="upload"><el-icon><Upload /></el-icon><span>{{ $t('workspaceDetail.uploadAndAddDoc') }}</span></el-dropdown-item>
+                <el-dropdown-item command="add_existing"><el-icon><FolderAdd /></el-icon><span>{{ $t('workspaceDetail.uploadAtExitDoc') }}</span></el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
         <ul class="file-library-list">
-          <!-- [核心] 为每个文件项添加一个“移除”按钮 -->
-          <li 
-            v-for="doc in workspace.documents" 
-            :key="doc.id"
-            class="file-item" 
-            @click="previewFile(doc)"
-          >
-            <div class="file-info">
-              <div class="file-name">{{ doc.filename }}</div>
-              <!-- <div class="file-meta">{{ formatDocMeta(doc) }}</div> -->
-            </div>
-            <button class="remove-btn" @click.stop="handleRemoveDocument(doc)" :title="removeDoc">
-              <el-icon><Close /></el-icon>
-            </button>
+          <li v-for="doc in workspace.documents" :key="doc.id" class="file-item" @click="previewFile(doc)">
+            <div class="file-info"><div class="file-name">{{ doc.filename }}</div></div>
+            <button class="remove-btn" @click.stop="handleRemoveDocument(doc)" :title="removeDoc"><el-icon><Close /></el-icon></button>
           </li>
         </ul>
       </div>
 
-      <!-- 第二栏：内容预览 -->
+      <!-- 2.2 內容預覽 -->
       <div class="canvas-panel content-preview" :class="{ 'fullscreen': isFullscreen }">
         <div class="panel-header">
           <h2 class="panel-title">{{ $t('workspaceDetail.contentPreview') }}</h2>
-          <button 
-            v-if="aiResultType === 'graph' || isFullscreen" 
-            class="fullscreen-btn" 
-            @click="toggleFullscreen"
-            :title="isFullscreen ? exitFullScreen : watchFullScreen"
-          >
+          <button v-if="aiResultType === 'graph' || isFullscreen" class="fullscreen-btn" @click="toggleFullscreen" :title="isFullscreen ? exitFullScreen : watchFullScreen">
             <el-icon v-if="!isFullscreen"><FullScreen /></el-icon>
             <el-icon v-else><Close /></el-icon>
           </button>
         </div>
-
-        <!-- [核心] .preview-content 是所有内容的容器 -->
         <div class="preview-content">
-          <!-- [核心] 自定义加载状态层 -->
           <div v-if="isUploading || isPreviewLoading || isAiLoading" class="loading-overlay">
-            <div class="spinner"></div>
-            <h3 class="loading-text">{{ loadingText }}</h3>
-            <p class="loading-subtext">{{ $t('workspaceDetail.processDataMsg') }}</p>
+            <div class="spinner"></div><h3 class="loading-text">{{ loadingText }}</h3><p class="loading-subtext">{{ $t('workspaceDetail.processDataMsg') }}</p>
           </div>
-
-          <!-- 只有在非加载状态下才渲染其他内容 -->
-          <div v-else-if="aiResultType === 'quiz' && aiResult" class="view-wrapper">
-            <QuizPlayer :quiz-data="aiResult" :workspace-id="workspace.id" />
-          </div>
-          
-          <div v-else-if="aiResultType === 'notes' && previewContent" class="view-wrapper scrollable">
-            <MarkdownRenderer :markdown="previewContent" />
-          </div>
-
-          <div v-else-if="aiResultType === 'graph' && aiResult" class="view-wrapper graph-wrapper">
-            <KnowledgeGraphRenderer :graph-string="aiResult.mermaid_code" />
-          </div>
-
-          <div v-else-if="aiResultType === 'chat'" class="view-wrapper">
-            <AiTutorChat :workspace-id="workspace.id" />
-          </div>
-
-          <div v-else-if="aiResultType === 'clue_sheet' && aiResult?.cards" class="view-wrapper">
-            <FlashcardViewer :cards="aiResult.cards" />
-          </div>
-
-          <div v-else-if="aiResultType === 'short_quiz' && aiResult" class="view-wrapper scrollable">
-            <ShortAnswerPlayer :workspace-id="workspace.id" :initial-question="aiResult.question" :initial-session-id="aiResult.session_id" />
-          </div>
-
-          <div v-else-if="aiResultType === 'long_quiz'" class="view-wrapper scrollable">
-            <LongAnswerPlayer v-if="workspace" :workspace-id="workspace.id" />
-          </div>
-
-          <div v-else-if="aiResultType === 'exam' && aiResult" class="view-wrapper scrollable">
-            <ExamPlayer :exam-data="aiResult" />
-          </div>
-
-          <div v-else-if="previewContent" class="view-wrapper scrollable">
-            <div class="content-text">{{ previewContent }}</div>
-          </div>
-
+          <div v-else-if="aiResultType === 'quiz' && aiResult" class="view-wrapper"><QuizPlayer :quiz-data="aiResult" :workspace-id="workspace.id" /></div>
+          <div v-else-if="aiResultType === 'notes' && previewContent" class="view-wrapper scrollable"><MarkdownRenderer :markdown="previewContent" /></div>
+          <div v-else-if="aiResultType === 'graph' && aiResult" class="view-wrapper graph-wrapper"><KnowledgeGraphRenderer :graph-string="aiResult.mermaid_code" /></div>
+          <div v-else-if="aiResultType === 'chat'" class="view-wrapper"><AiTutorChat :workspace-id="workspace.id" /></div>
+          <div v-else-if="aiResultType === 'clue_sheet' && aiResult?.cards" class="view-wrapper"><FlashcardViewer :cards="aiResult.cards" /></div>
+          <div v-else-if="aiResultType === 'short_quiz' && aiResult" class="view-wrapper scrollable"><ShortAnswerPlayer :workspace-id="workspace.id" :initial-question="aiResult.question" :initial-session-id="aiResult.session_id" /></div>
+          <div v-else-if="aiResultType === 'long_quiz'" class="view-wrapper scrollable"><LongAnswerPlayer v-if="workspace" :workspace-id="workspace.id" /></div>
+          <div v-else-if="aiResultType === 'exam' && aiResult" class="view-wrapper scrollable"><ExamPlayer :exam-data="aiResult" /></div>
+          <div v-else-if="previewContent" class="view-wrapper scrollable"><div class="content-text">{{ previewContent }}</div></div>
           <div v-else class="view-wrapper">
-            <div class="empty-state">
+            <div class="empty-state"><p>{{ $t('workspaceDetail.commandDescribe1') }}<br>{{ $t('workspaceDetail.commandDescribe2') }}</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2.3 智能工具箱 -->
+      <div class="canvas-panel ai-toolbox">
+        <div class="panel-header">
+          <h2 class="panel-title">{{ $t('workspaceDetail.smartControl') }}</h2>
+          <el-icon v-if="isAiLoading" class="is-loading"><Loading /></el-icon>
+        </div>
+        <div class="ai-toolbox-list">
+          <button v-for="tool in aiTools" :key="`desktop-${tool.type}`" class="ai-tool" :disabled="isAiLoading" @click="runAiTool(tool.type)">
+            <div class="tool-title">{{ tool.title }}</div>
+            <div class="tool-description">{{ tool.description }}</div>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- =================================================== -->
+    <!-- 3. [核心重構] 移動端佈局 (僅在移動端顯示)           -->
+    <!-- =================================================== -->
+    <div class="mobile-layout mobile-view">
+      <div class="mobile-action-grid">
+        <div class="mobile-action-card" @click="isFileDrawerOpen = true">
+          <div class="card-icon-wrapper"><el-icon><Files /></el-icon></div>
+          <div class="card-text">
+            <h3>{{ $t('workspaceDetail.docStore') }}</h3>
+            <p>{{ workspace.documents.length }} {{ $t('workspaceDetail.files_count') }}</p>
+          </div>
+        </div>
+        <div class="mobile-action-card" @click="isAiDrawerOpen = true">
+          <div class="card-icon-wrapper ai"><el-icon><MagicStick /></el-icon></div>
+          <div class="card-text">
+            <h3>{{ $t('workspaceDetail.smartControl') }}</h3>
+            <p>{{ aiTools.length }} {{ $t('workspaceDetail.tools_count') }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="canvas-panel content-preview mobile-preview-panel">
+        <div class="preview-content">
+          <div v-if="isUploading || isPreviewLoading || isAiLoading" class="loading-overlay">
+            <div class="spinner"></div><h3 class="loading-text">{{ loadingText }}</h3><p class="loading-subtext">{{ $t('workspaceDetail.processDataMsg') }}</p>
+          </div>
+          <div v-else-if="aiResultType === 'quiz' && aiResult" class="view-wrapper scrollable"><QuizPlayer :quiz-data="aiResult" :workspace-id="workspace.id" /></div>
+          <div v-else-if="aiResultType === 'notes' && previewContent" class="view-wrapper scrollable"><MarkdownRenderer :markdown="previewContent" /></div>
+          <div v-else-if="aiResultType === 'graph' && aiResult" class="view-wrapper graph-wrapper"><KnowledgeGraphRenderer :graph-string="aiResult.mermaid_code" /></div>
+          <div v-else-if="aiResultType === 'chat'" class="view-wrapper scrollable"><AiTutorChat :workspace-id="workspace.id" /></div>
+          <div v-else-if="aiResultType === 'clue_sheet' && aiResult?.cards" class="view-wrapper scrollable"><FlashcardViewer :cards="aiResult.cards" /></div>
+          <div v-else-if="aiResultType === 'short_quiz' && aiResult" class="view-wrapper scrollable"><ShortAnswerPlayer :workspace-id="workspace.id" :initial-question="aiResult.question" :initial-session-id="aiResult.session_id" /></div>
+          <div v-else-if="aiResultType === 'long_quiz'" class="view-wrapper scrollable"><LongAnswerPlayer v-if="workspace" :workspace-id="workspace.id" /></div>
+          <div v-else-if="aiResultType === 'exam' && aiResult" class="view-wrapper scrollable"><ExamPlayer :exam-data="aiResult" /></div>
+          <div v-else-if="previewContent" class="view-wrapper scrollable"><div class="content-text">{{ previewContent }}</div></div>
+          <div v-else class="view-wrapper">
+            <div class="empty-state mobile">
+              <div class="empty-icon"><el-icon><Document /></el-icon></div>
+              <h3>{{ $t('workspaceDetail.contentPreview') }}</h3>
               <p>{{ $t('workspaceDetail.commandDescribe1') }}<br>{{ $t('workspaceDetail.commandDescribe2') }}</p>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- 第三栏：智能工具箱 -->
-      <div class="canvas-panel ai-toolbox">
-        <div class="panel-header">
-          <h2 class="panel-title">{{ $t('workspaceDetail.smartControl') }}</h2>
-          <!-- [新增] 加载指示器 -->
-          <el-icon v-if="isAiLoading" class="is-loading"><Loading /></el-icon>
-        </div>
-        <div class="ai-toolbox-list">
-        <!-- 
-          [核心] 
-          1. 绑定 @click 事件，调用 runAiTool 函数并传入工具类型
-          2. 绑定 :disabled 状态，防止在 AI 处理期间重复点击，或在未选择文件时点击
-        -->
-          <button class="ai-tool" :disabled="isAiLoading" @click="runAiTool('graph')">
-            <div class="tool-title">{{ $t('workspaceDetail.generateKnowledgeGraph') }}</div>
-            <div class="tool-description">{{ $t('workspaceDetail.generateKnowledgeGraphDescribe') }}</div>
-          </button>
-          <button class="ai-tool" :disabled="isAiLoading" @click="runAiTool('notes')">
-            <div class="tool-title">{{ $t('workspaceDetail.generateNotes') }}</div>
-            <div class="tool-description">{{ $t('workspaceDetail.generateNotesDescribe') }}</div>
-          </button>
-          <button class="ai-tool" :disabled="isAiLoading" @click="runAiTool('quiz')">
-            <div class="tool-title">{{ $t('workspaceDetail.generateQuiz') }}</div>
-            <div class="tool-description">{{ $t('workspaceDetail.generateQuizDescribe') }}</div>
-          </button>
-          <button class="ai-tool" :disabled="isAiLoading" @click="runAiTool('clue_sheet')">
-            <div class="tool-title">{{ $t('workspaceDetail.gen_clue_sheet_title') }}</div>
-            <div class="tool-description">{{ $t('workspaceDetail.gen_clue_sheet_desc') }}</div>
-          </button>
-          <button class="ai-tool" :disabled="isAiLoading" @click="runAiTool('chat')">
-            <div class="tool-title">{{ $t('workspaceDetail.ai_tutor_title') }}</div>
-            <div class="tool-description">{{ $t('workspaceDetail.ai_tutor_desc') }}</div>
-          </button>
-          <button class="ai-tool" :disabled="isAiLoading" @click="runAiTool('tutorial')">
-            <div class="tool-title">{{ $t('workspaceDetail.gen_tutorial_title') }}</div>
-            <div class="tool-description">{{ $t('workspaceDetail.gen_tutorial_desc') }}</div>
-          </button>
-          <button class="ai-tool" :disabled="isAiLoading" @click="runAiTool('short_quiz')">
-            <div class="tool-title">{{ $t('workspaceDetail.gen_short_quiz_title') }}</div>
-            <div class="tool-description">{{ $t('workspaceDetail.gen_short_quiz_desc') }}</div>
-          </button>
-          <button class="ai-tool" :disabled="isAiLoading" @click="runAiTool('long_quiz')">
-            <div class="tool-title">{{ $t('workspaceDetail.gen_long_quiz_title') }}</div>
-            <div class="tool-description">{{ $t('workspaceDetail.gen_long_quiz_desc') }}</div>
-          </button>
-          <button class="ai-tool" :disabled="isAiLoading" @click="runAiTool('exam')">
-            <div class="tool-icon"><i class="fas fa-file-alt"></i></div>
-            <div class="tool-title">{{ $t('workspaceDetail.gen_exam_title') }}</div>
-            <div class="tool-description">{{ $t('workspaceDetail.gen_exam_desc') }}</div>
-          </button>
-        </div>
-      </div>
     </div>
   </div>
+
+  <!-- =================================================== -->
+  <!-- 4. [核心] 底部抽屜 (Bottom Sheet)                  -->
+  <!-- =================================================== -->
+  
+  <el-drawer v-model="isFileDrawerOpen" direction="btt" :with-header="false" size="auto" custom-class="nexus-bottom-drawer" class="nexus-dialog">
+    <div class="drawer-content">
+      <div class="drawer-handle"></div>
+      <div class="drawer-header">
+        <h3 class="drawer-title">{{ $t('workspaceDetail.docStore') }}</h3>
+        <button class="close-btn" @click="isFileDrawerOpen = false"><el-icon><Close /></el-icon></button>
+      </div>
+      <ul v-if="workspace && workspace.documents && workspace.documents.length > 0" class="file-library-list drawer-list">
+        <li v-for="doc in workspace.documents" :key="`drawer-file-${doc.id}`" class="file-item" @click="previewFile(doc)">
+          <div class="file-name">{{ doc.filename }}</div>
+        </li>
+      </ul>
+      <div v-else class="drawer-empty-state">{{ $t('workspaceDetail.no_files_in_workspace') }}</div>
+      <!-- [i18n 修正] 使用 t() 函數 -->
+      <button class="drawer-add-btn" @click="handleDrawerFileCommand('upload')">
+        <el-icon><Plus /></el-icon> {{ t('workspaceDetail.add_new_doc') }}
+      </button>
+    </div>
+  </el-drawer>
+
+  <el-drawer v-model="isAiDrawerOpen" direction="btt" :with-header="false" size="auto" custom-class="nexus-bottom-drawer" class="nexus-dialog">
+    <div class="drawer-content">
+      <div class="drawer-handle"></div>
+      <div class="drawer-header">
+        <h3 class="drawer-title">{{ $t('workspaceDetail.smartControl') }}</h3>
+        <button class="close-btn" @click="isAiDrawerOpen = false"><el-icon><Close /></el-icon></button>
+      </div>
+      <div class="ai-toolbox-list drawer-list">
+        <button v-for="tool in aiTools" :key="`drawer-tool-${tool.type}`" class="ai-tool" :disabled="isAiLoading" @click="runAiTool(tool.type)">
+          <div class="tool-icon-wrapper"><el-icon><component :is="tool.icon" /></el-icon></div>
+          <div class="tool-text">
+            <div class="tool-title">{{ tool.title }}</div>
+            <div class="tool-description">{{ tool.description }}</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </el-drawer>
+
+  <!-- =================================================== -->
+  <!-- 5. 其他彈窗                                       -->
+  <!-- =================================================== -->
 
   <!-- [核心] 添加文件的弹窗 (使用 ElDialog) -->
   <el-dialog
@@ -285,8 +279,8 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 // [核心] 导入 ElDialog 和新的图标
-import { ElDialog, ElMessage, ElMessageBox } from 'element-plus';
-import { Plus, Close, Select, CircleCheck, Loading, FullScreen, UploadFilled, Upload, FolderAdd } from '@element-plus/icons-vue';
+import { ElDialog, ElMessage, ElMessageBox, ElDrawer } from 'element-plus';
+import { Plus, Close, Select, CircleCheck, Loading, FullScreen, UploadFilled, Upload, FolderAdd, Files, MagicStick, Document, Share, Notebook, QuestionFilled } from '@element-plus/icons-vue';
 
 // [核心] 导入新的 API 函数
 import { getWorkspaceById, addDocumentsToWorkspace, removeDocumentFromWorkspace, type Workspace } from '../api/workspaces';
@@ -350,6 +344,23 @@ const aiToolName = ref('');
 const isPreviewModalVisible = ref(false);
 const previewingFile = ref<DocumentInfo | null>(null);
 
+// --- 移動端抽屜狀態 ---
+const isFileDrawerOpen = ref(false);
+const isAiDrawerOpen = ref(false);
+
+// [新增] 將 AI 工具定義為一個數組，方便在多處復用
+const aiTools = computed(() => [
+  { type: 'graph' as const, title: t('workspaceDetail.generateKnowledgeGraph'), description: t('workspaceDetail.generateKnowledgeGraphDescribe'), icon: Share },
+  { type: 'notes' as const, title: t('workspaceDetail.generateNotes'), description: t('workspaceDetail.generateNotesDescribe'), icon: Notebook },
+  { type: 'quiz' as const, title: t('workspaceDetail.generateQuiz'), description: t('workspaceDetail.generateQuizDescribe'), icon: QuestionFilled },
+  { type: 'clue_sheet' as const, title: t('workspaceDetail.gen_clue_sheet_title'), description: t('workspaceDetail.gen_clue_sheet_desc'), icon: Files },
+  { type: 'chat' as const, title: t('workspaceDetail.ai_tutor_title'), description: t('workspaceDetail.ai_tutor_desc'), icon: MagicStick },
+  { type: 'tutorial' as const, title: t('workspaceDetail.gen_tutorial_title'), description: t('workspaceDetail.gen_tutorial_desc'), icon: Document },
+  { type: 'short_quiz' as const, title: t('workspaceDetail.gen_short_quiz_title'), description: t('workspaceDetail.gen_short_quiz_desc'), icon: QuestionFilled },
+  { type: 'long_quiz' as const, title: t('workspaceDetail.gen_long_quiz_title'), description: t('workspaceDetail.gen_long_quiz_desc'), icon: Notebook },
+  { type: 'exam' as const, title: t('workspaceDetail.gen_exam_title'), description: t('workspaceDetail.gen_exam_desc'), icon: Files },
+]);
+
 // --- 國際化 ---
 const { t } = useI18n();
 
@@ -403,6 +414,11 @@ const gen_exam_title = computed(() => t('workspaceDetail.gen_exam_title'));
 
 // [核心] `previewFile` 函数 (与 Files.vue 完全一致)
 const previewFile = (doc: DocumentInfo) => {
+  // [擴展] 關閉文件抽屜
+  if (isFileDrawerOpen.value) {
+    isFileDrawerOpen.value = false;
+  }
+
   // 因为现在 doc 对象是完整的，包含了 url，所以这个判断会成功
   if (doc.url) {
     previewingFile.value = doc;
@@ -515,6 +531,11 @@ const handleUpload = async (options: any) => {
 
 // --- [核心最终修正] AI 工具调用主函数 ---
 const runAiTool = async (toolType: 'graph' | 'notes' | 'quiz' | 'chat' | 'clue_sheet' | 'tutorial' | 'short_quiz' | 'long_quiz' | 'exam') => {
+  // [擴展] 關閉 AI 抽屜
+  if (isAiDrawerOpen.value) {
+    isAiDrawerOpen.value = false;
+  }
+
   if (!workspace.value) return;
 
   // 路标 1: 函数开始
@@ -819,6 +840,15 @@ const handleRemoveDocument = (doc: DocumentInfo) => {
   }).catch(() => {});
 };
 
+// [新增] 處理抽屜按鈕點擊的新函數
+const handleDrawerFileCommand = (command: 'upload' | 'add_existing') => {
+  isFileDrawerOpen.value = false; // 先關閉當前抽屜
+  setTimeout(() => {
+    // 延遲調用您已有的函數
+    handleFileCommand(command);
+  }, 300); // 300ms 延遲等待抽屜關閉動畫
+};
+
 </script>
 
 <style scoped>
@@ -831,6 +861,8 @@ const handleRemoveDocument = (doc: DocumentInfo) => {
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
 /* --- 主布局 --- */
+.desktop-view { display: block; }
+.mobile-view { display: none; }
 .workspace-detail-container { height: 100%; display: flex; flex-direction: column; }
 .page-header { margin-bottom: 20px; }
 .page-title { font-size: 36px; font-weight: 700; }
@@ -1075,49 +1107,66 @@ const handleRemoveDocument = (doc: DocumentInfo) => {
   }
 }
 
-/* 手機尺寸 (768px 以下): 徹底變為單欄垂直堆疊 */
+/* --- [核心美化] 移動端樣式 --- */
 @media (max-width: 768px) {
-  /* 1. 調整頁面頭部 */
-  .page-header {
-    margin-bottom: 20px;
-  }
-  .page-title {
-    font-size: 28px;
-  }
-  .page-description {
-    font-size: 14px;
-    margin-bottom: 20px;
-  }
+  .desktop-view { display: none; }
+  .mobile-view { display: block; }
 
-  /* 2. [核心] 將三欄網格變為單欄垂直佈局 */
-  .collaboration-canvas {
-    grid-template-columns: 1fr; /* 變為單欄 */
-    min-height: auto; /* 移除最小高度，讓高度自適應 */
-    flex-grow: 0; /* 讓容器高度由內容決定，不再填充剩餘空間 */
-  }
-
-  /* 3. [優化] 為每個面板設置最小高度，並確保滾動 */
-  .canvas-panel {
-    min-height: 300px; /* 給每個面板一個合理的最小高度 */
-    padding-bottom: 70px;
-  }
+  .workspace-detail-container { padding: 0 16px; height: 100%; }
+  .mobile-layout { height: 100%; display: flex; flex-direction: column; gap: 20px; }
   
-  /* 內容預覽區在手機上需要特別設定高度，避免過高或過低 */
-  .content-preview {
-    height: 60vh; /* 設置一個基於視口的高度，提供良好的預覽體驗 */
-    min-height: 600px; /* 確保最低高度 */
-  }
+  .page-header { margin-bottom: 16px; padding-top: 16px; }
+  .page-title { font-size: 24px; font-weight: 600; }
 
-  .file-library-list, .ai-toolbox-list {
-    /* 在手機上，讓這兩個列表能完整顯示內容，而不是內部滾動 */
-    overflow-y: visible;
-    flex-grow: 0;
+  .mobile-action-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
   }
-  #nexus-dialog-up {
-    width: 300px;
+  .mobile-action-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    cursor: pointer;
+  }
+  .mobile-action-card:nth-child(2) { border-color: var(--active-glow); }
+  .card-icon-wrapper { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background-color: rgba(159, 168, 218, 0.2); color: #C5CAE9; }
+  .card-icon-wrapper .el-icon { font-size: 20px; }
+  .card-icon-wrapper.ai { background-color: rgba(77, 182, 172, 0.15); color: #4DB6AC; }
+  .card-text h3 { font-size: 15px; font-weight: 600; margin: 0 0 4px 0; color: var(--text-primary); }
+  .card-text p { font-size: 12px; margin: 0; color: var(--text-secondary); }
+
+  .mobile-preview-panel {
+    flex-grow: 1;
+    min-height: 0;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  .empty-state.mobile {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;
+  }
+  .empty-icon { width: 60px; height: 60px; border-radius: 12px; background-color: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; font-size: 28px; color: var(--text-secondary); margin-bottom: 16px; }
+  .empty-state h3 { font-size: 16px; font-weight: 500; margin: 0 0 8px 0; }
+  .empty-state p { font-size: 13px; text-align: center; line-height: 1.6; max-width: 280px; }
+  .ai-toolbox { overflow-y: auto; }
+  .ai-toolbox-list { display: flex; flex-direction: column; gap: 16px;  position: static; top: auto; }
+  .ai-tool { padding: 16px; border-radius: 8px; border: 1px solid var(--border-color); background-color: transparent; color: var(--text-primary); text-align: left; cursor: pointer; transition: all 0.3s; font-family: inherit; }
+  .ai-tool:hover:not(:disabled) { border-color: var(--active-glow); background-color: var(--active-bg); }
+  .tool-title { font-size: 16px; font-weight: 700; }
+  .tool-description { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+  .ai-tool:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .canvas-panel {
+    background-color: var(--panel-bg); backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color); border-radius: 12px;
+    padding: 20px; display: flex; flex-direction: column;
+    overflow: hidden; height: 340px;
   }
 }
-
 </style>
 
 <style>
@@ -1230,6 +1279,29 @@ const handleRemoveDocument = (doc: DocumentInfo) => {
   font-size: 12px;
   margin-top: 10px;
 }
+
+/* --- [核心] 底部抽屜全局樣式 --- */
+.nexus-bottom-drawer {
+  background: #1E1C3A !important;
+  border-top-left-radius: 20px !important;
+  border-top-right-radius: 20px !important;
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
+}
+.nexus-bottom-drawer .el-drawer__body { padding: 0 !important; }
+.drawer-content { padding: 8px 16px 24px 16px; display: flex; flex-direction: column; }
+.drawer-handle { width: 40px; height: 4px; background-color: rgba(255,255,255,0.2); border-radius: 2px; margin: 0 auto 16px auto; flex-shrink: 0; }
+.drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0; }
+.drawer-title { font-size: 18px; font-weight: 600; color: var(--text-primary); }
+.close-btn { background: none; border: none; color: var(--text-secondary); font-size: 20px; cursor: pointer; }
+.drawer-list { max-height: 50vh; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
+.drawer-empty-state { padding: 40px 0; text-align: center; color: var(--text-secondary); }
+.drawer-list .file-item { padding: 16px; border-radius: 10px; font-weight: 500; color: var(--text-primary); background-color: rgba(255,255,255,0.05); margin-bottom: 10px; cursor: pointer; transition: background-color 0.2s; }
+.drawer-list .file-item:hover { background-color: var(--active-bg); }
+.drawer-add-btn { width: 100%; padding: 16px; border-radius: 10px; background: var(--active-bg); border: 1px solid var(--active-glow); color: var(--text-primary); font-size: 16px; font-weight: 500; margin-top: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; flex-shrink: 0; }
+
+.drawer-list .ai-tool { display: flex; align-items: center; gap: 16px; }
+.drawer-list .tool-icon-wrapper { width: 40px; height: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; background-color: rgba(255,255,255,0.1); }
+.drawer-list .tool-text { text-align: left; }
 </style>
 
 

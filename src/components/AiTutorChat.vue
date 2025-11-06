@@ -236,4 +236,80 @@ button {
 }
 button:hover:not(:disabled) { filter: brightness(1.2); }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* --- [核心美化] 移動端樣式 --- */
+@media (max-width: 768px) {
+  textarea {
+    flex-grow: 1;
+    max-height: 150px;
+    resize: none;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+
+  :deep(.markdown-body) {
+    /* 覆盖 MarkdownRenderer 的默认样式 */
+    color: var(--text-secondary);
+    font-size: 14px;
+  }
+  :deep(.markdown-body p) { margin: 0; }
+
+  .chat-message {
+    display: flex;
+    gap: 2px;
+    max-width: 80%;
+  }
+  .chat-message.role-user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+  }
+  .chat-message.role-assistant {
+    align-self: flex-start;
+    margin-right: 20px;
+  }
+
+  .avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    flex-shrink: 0; font-size: 20px;
+    color: var(--text-primary);
+  }
+  .avatar-user { background-color: var(--active-glow); }
+  .avatar-assistant {
+    background-color: var(--panel-bg);
+    border: 1px solid var(--border-color);
+  }
+
+  .message-content {
+    padding: 8px 12px;
+    border-radius: 12px;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+  }
+  .chat-message.role-user .message-content {
+    background-color: var(--active-bg);
+    border-bottom-right-radius: 4px;
+  }
+  .chat-message.role-assistant .message-content {
+    border-bottom-left-radius: 4px;
+  }
+  .chat-history {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 1px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+}
 </style>

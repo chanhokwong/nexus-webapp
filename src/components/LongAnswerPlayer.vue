@@ -339,4 +339,144 @@ const retryCurrentQuestion = () => {
 .criterion-comment { font-size: 14px; color: var(--text-secondary); }
 
 .user-answer-text { white-space: pre-wrap; } /* 保持用户答案的换行 */
+
+/* --- [核心美化] 移動端樣式 --- */
+@media (max-width: 768px) {
+  /* --- 答题阶段 --- */
+  .answering-phase {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 100%;
+  }
+  .question-area {
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0; /* 防止被压缩 */
+  }
+  .question-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+  .question-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.6;
+  }
+  .answer-textarea {
+    flex-grow: 1; /* 占据大部分剩余空间 */
+    min-height: 220px; /* 确保有足够大的初始输入区域 */
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 15px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.7;
+    outline: none;
+    resize: vertical;
+    transition: border-color 0.3s;
+  }
+  .answer-textarea:focus {
+    border-color: var(--active-glow);
+  }
+
+  .btn-submit {
+    align-self: flex-end; /* 按钮靠右 */
+    padding: 12px 24px;
+    background-color: var(--active-glow);
+    border: none;
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  /* --- 加载与空状态 --- */
+  .loading-state, .empty-state {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    height: 100%;
+    color: var(--text-secondary);
+  }
+
+  /* --- 结果展示阶段 --- */
+  .results-phase {
+    display: grid;
+    gap: 24px;
+    height: 100%;
+  }
+  .results-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto; /* 左右两栏各自独立滚动 */
+    padding-bottom: 20px;
+  }
+
+  .result-card {
+    background-color: rgba(17, 19, 44, 0.5);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    flex-shrink: 0; /* 防止卡片被压缩 */
+  }
+  .result-card h3 {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .result-card p,
+  .result-card :deep(.markdown-body) {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-primary);
+  }
+
+  /* 让“你的答案”和“参考答案”占据整行 */
+  .result-card.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .result-actions {
+    grid-column: 1 / -1; /* 让按钮组横跨两栏 */
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding-top: 0px;
+  }
+  .btn-submit.retry-btn {
+    /* “重答”按钮使用次要样式 */
+    background: transparent;
+    border: 1px solid var(--active-glow);
+    color: var(--active-glow);
+  }
+  .btn-submit.retry-btn:hover:not(:disabled) {
+    background: var(--active-bg);
+    box-shadow: none; /* 移除主要按钮的辉光效果 */
+  }
+  .next-btn {
+    align-self: center; /* 按钮居中 */
+    margin-top: 5px;
+  }
+  /* 评分细则列表 */
+  .marking-scheme-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+  .marking-item { border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+  .marking-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .criterion-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .criterion-title { font-weight: 600; color: var(--text-primary); font-size: 14px; }
+  .criterion-score { font-weight: 700; color: var(--active-glow); background: var(--active-bg); padding: 2px 8px; border-radius: 4px; font-size: 14px; }
+  .criterion-comment { font-size: 14px; color: var(--text-secondary); }
+}
 </style>
